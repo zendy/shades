@@ -1,0 +1,57 @@
+{
+  "name": "@bupa-digital/shades",
+  "version": "1.0.0",
+  "main": "./dist/bundle.js",
+  "scripts": {
+    "purge": "rm -rf ./dist",
+    "build": "webpack --config ./webpack.config.js --entry ./src/shades.js --output ./dist/bundle.js",
+    "test": "cross-env NODE_ENV=test jest --watch --no-cache",
+    "prepublish": "yarn build"
+  },
+  "devDependencies": {
+    "autoprefixer": "^7.2.1",
+    "babel-core": "^6.26.0",
+    "babel-jest": "^22.4.1",
+    "babel-loader": "^7.1.4",
+    "babel-plugin-import-glob": "^2.0.0",
+    "babel-plugin-pipe-composition": "^0.1.1",
+    "babel-plugin-transform-custom-element-classes": "^0.1.0",
+    "babel-plugin-transform-es2015-classes": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-react-app": "^3.1.0",
+    "babel-preset-stage-0": "^6.24.1",
+    "cross-env": "^5.1.1",
+    "jest": "^22.4.2",
+    "regenerator-runtime": "^0.11.1",
+    "webpack": "^4.1.1",
+    "webpack-cli": "^2.0.11",
+    "webpack-node-externals": "^1.6.0"
+  },
+  "peerDependencies": {
+    "prop-types": "^15.6.1",
+    "ramda": "^0.25.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "recompose": "^0.26.0"
+  },
+  "dependencies": {
+    "babel-runtime": "^6.26.0",
+    "html-tag-names": "^1.1.2",
+    "object-hash": "^1.2.0",
+    "prop-types": "^15.6.1",
+    "ramda": "^0.25.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "recompose": "^0.26.0",
+    "svg-tag-names": "^1.1.1"
+  },
+  "jest": {
+    "verbose": true,
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "presets": ["env", "stage-0", "react"],
+  "plugins": [
+    "import-glob",
+    "transform-class-properties",
+    "transform-object-rest-spread",
+    "transform-custom-element-classes",
+    "transform-es2015-classes",
+    ["transform-runtime", {"polyfill": false}],
+    "pipe-composition"
+  ]
+}
