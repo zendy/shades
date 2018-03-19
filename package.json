@@ -5,8 +5,9 @@
   "scripts": {
     "purge": "rm -rf ./dist",
     "build": "webpack --config ./webpack.config.js --entry ./src/shades.js --output ./dist/bundle.js",
-    "test": "cross-env NODE_ENV=test jest --watch --no-cache",
-    "prepublish": "yarn build"
+    "test": "cross-env NODE_ENV=test jest --no-cache",
+    "test:watch": "cross-env NODE_ENV=test jest --watch --no-cache",
+    "prepublish": "yarn test && yarn build"
   },
   "devDependencies": {
     "autoprefixer": "^7.2.1",
@@ -28,7 +29,12 @@
     "regenerator-runtime": "^0.11.1",
     "webpack": "^4.1.1",
     "webpack-cli": "^2.0.11",
-    "webpack-node-externals": "^1.6.0"
+    "webpack-node-externals": "^1.6.0",
+    "prop-types": "^15.6.1",
+    "ramda": "^0.25.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "recompose": "^0.26.0"
   },
   "peerDependencies": {
     "prop-types": "^15.6.1",
@@ -41,11 +47,6 @@
     "babel-runtime": "^6.26.0",
     "html-tag-names": "^1.1.2",
     "object-hash": "^1.2.0",
-    "prop-types": "^15.6.1",
-    "ramda": "^0.25.0",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
-    "recompose": "^0.26.0",
     "svg-tag-names": "^1.1.1"
   },
   "jest": {
