@@ -1,7 +1,7 @@
 {
   "name": "@bupa-digital/shades",
   "author": "Bupa Digital Australia - Front-End Team <npm-digital@bupa.com.au>",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "./dist/bundle.js",
   "scripts": {
     "purge": "rm -rf ./dist",
