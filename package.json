@@ -1,13 +1,16 @@
 {
   "name": "@bupa-digital/shades",
+  "author": "Bupa Digital Australia - Front-End Team <npm-digital@bupa.com.au>",
   "version": "0.1.0",
   "main": "./dist/bundle.js",
   "scripts": {
     "purge": "rm -rf ./dist",
-    "build": "webpack --config ./webpack.config.js --entry ./src/shades.js --output ./dist/bundle.js",
+    "build": "webpack --config ./webpack.config.js",
     "test": "cross-env NODE_ENV=test jest --no-cache",
     "test:watch": "cross-env NODE_ENV=test jest --watch --no-cache",
-    "prepublish": "yarn test && yarn build"
+    "prepublish": "yarn test && yarn build",
+    "preversion": "yarn test && yarn build",
+    "postversion": "git push --tags"
   },
   "devDependencies": {
     "autoprefixer": "^7.2.1",

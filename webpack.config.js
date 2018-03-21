@@ -1,4 +1,5 @@
 const nodeExternals = require('webpack-node-externals');
+const path = require('path');
 
 const moduleRule = (target, loader) => ({
   test: target,
@@ -10,10 +11,14 @@ const moduleRule = (target, loader) => ({
 
 module.exports = {
   mode: 'production',
-  entry: './src/shades.js',
+  entry: {
+    bundle: './src/shades.js',
+    react: './src/with-react.js',
+    helpers: './src/helpers.js'
+  },
   output: {
-    path: './dist',
-    filename: 'bundle.js',
+    path: path.join(__dirname, '/dist'),
+    filename: '[name].js',
     library: '@bupa-digital/shades',
     libraryTarget: 'umd'
   },
