@@ -10,6 +10,7 @@ import {
    toUpper,
    anyPass,
    allPass,
+   equals,
    contains,
    map,
    reduce,
@@ -21,7 +22,9 @@ import {
    split,
    flip,
    find,
-   nth
+   nth,
+   reduceWhile,
+   either
 } from 'ramda';
 
 const UPPERCASE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' >> split('');
@@ -35,6 +38,8 @@ export const isType = curry(
   (expected, value) => toLower(type(value)) === toLower(expected)
 );
 
+const isFalsy = (value) => !value;
+
 export const reduceWhileFalsy = curry(
   (handlerFn, list) => reduceWhile(isFalsy, handlerFn, false, list)
 );
@@ -46,7 +51,7 @@ export const includes = curry(
 export const noop      = ()       => {};
 export const id        = (value)  => value;
 export const every     = (...fns) => (...args) => allPass(fns)(...args);
-export const either    = (...fns) => (...args) => reduceWhileFalsy((result, item) => item(...args), fns);
+// export const either    = (...fns) => (...args) => reduceWhileFalsy((result, item) => item(...args), fns);
 export const firstItem = nth(0);
 
 export const isArray            = isType('array');
@@ -56,6 +61,8 @@ export const isObjectLiteral    = isType('object');
 
 export const isDefined          = complement(isNil);
 export const isNotDefined       = isNil;
+
+export const isUndefinedOrFalse = either(isNotDefined, equals(false));
 
 export const isNotArray         = complement(isArray);
 export const isNotString        = complement(isString);

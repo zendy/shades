@@ -9,8 +9,10 @@ import {
   isNotArray,
   isString,
   isFunction,
+  isDefined,
   joinString,
-  stateful
+  stateful,
+  isUndefinedOrFalse
 } from './utilities';
 
 import {
@@ -27,7 +29,12 @@ import {
   complement,
   unless,
   concat,
-  map
+  map,
+  flip,
+  contains,
+  defaultTo,
+  intersection,
+  reduceWhile
 } from 'ramda';
 
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
@@ -66,10 +73,17 @@ export const parseRules = curry(
   (parentSelector, props, rules) => (
     Object.entries(rules).reduce((result, [key, value]) => {
       const isFunctionRule = isFunction(value);
-      const hasNestedRules = isObjectLiteral(value) || isFunctionRule;
+      const hasObjectLiteral = isObjectLiteral(value);
+      const hasNestedRules = hasObjectLiteral || isFunctionRule;
 
       const hasAtRuleBlock = isAtRule(key) && hasNestedRules;
       const shouldBeCombinedSelector = isSelectorOrPseudo(key) && hasNestedRules;
+      const isPatternMatch = (
+        hasObjectLiteral
+        && !hasAtRuleBlock
+        && !shouldBeCombinedSelector
+        && !isFunctionRule
+      );
 
       if (hasAtRuleBlock) {
         const additionalRules = parseRules(parentSelector, props, value);
@@ -94,7 +108,40 @@ export const parseRules = curry(
         }
       }
 
+      // Rule-level stuff below
+
       const existingRules = result[parentSelector] || [];
+
+      const falseToNull = (value) => {
+        if (value === false) return null;
+        return value;
+      }
+
+      if (isPatternMatch) {
+        console.log('pattern match')
+        const { default: defaultValue, ...matchers } = value;
+        const allPropNames = Object.keys(props);
+        const allMatchers = Object.keys(matchers);
+        const matchingProps = intersection(allPropNames, allMatchers);
+
+        const computedValue = matchingProps >> reduceWhile(
+          isUndefinedOrFalse,
+          (previous, propName) => matchers[propName] >> whenFunctionCallWith(props[propName]),
+          false
+        ) >> falseToNull >> defaultTo(defaultValue);
+
+        // If the match ends up not giving a real value (and there is no default),
+        // then we just skip this rule entirely.
+        if (isUndefinedOrFalse(computedValue)) return result;
+
+        return {
+          ...result,
+          [parentSelector]: [
+            ...existingRules,
+            createStyleRule(key, computedValue)
+          ]
+        };
+      }
 
       return {
         ...result,

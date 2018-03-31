@@ -12,13 +12,13 @@ const moduleRule = (target, loader) => ({
 module.exports = {
   mode: 'production',
   entry: {
-    bundle: './src/shades.js',
+    lib: './src/shades.js',
     react: './src/with-react.js',
     helpers: './src/helpers.js'
   },
   output: {
-    path: path.join(__dirname, '/dist'),
-    filename: '[name].js',
+    path: __dirname,
+    filename: '[name]/index.js',
     library: '@bupa-digital/shades',
     libraryTarget: 'umd'
   },

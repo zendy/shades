@@ -1,10 +1,12 @@
 import React        from 'react';
 import htmlTagNames from 'html-tag-names'
 import PropTypes    from 'prop-types';
+import shouldForwardProperty from './should-forward-prop';
 
 import {
   curry,
-  compose
+  compose,
+  pickBy
 } from 'ramda';
 
 import {
@@ -17,9 +19,13 @@ import {
 
 import css, { generateClassName } from './style-parser';
 
+import {
+  joinString
+} from './utilities';
+
 const wrapReactName = curry(
   (wrapperName, Component) => setDisplayName(wrapDisplayName(Component, wrapperName))
-)
+);
 
 export const Shades = compose(
   setDisplayName('Shades'),
@@ -38,12 +44,13 @@ const prettyComponentFactory = curry(
     const baseClassName = generateClassName();
 
     const prettyElement = setDisplayName(`shades.${tagName}`)(
-      ({ targetDom, children, ...props }) => {
+      ({ targetDom, children, className, ...props }) => {
         const fullClassName = css(baseClassName, styleRules, targetDom, props);
+        const propsToForward = props >> pickBy((val, key) => shouldForwardProperty(tagName, key));
 
         return React.createElement(tagName, {
-          className: fullClassName,
-          ...props
+          className: joinString(fullClassName, className),
+          ...propsToForward
         }, children);
       }
     )

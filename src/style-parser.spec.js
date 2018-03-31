@@ -85,4 +85,127 @@ describe('parseRules', () => {
     expect(result).toHaveProperty([mq, topSelector]);
     expect(result).toHaveProperty([mq, topSelectorHover]);
   });
+
+  describe('Pattern matching', () => {
+    it('supports pattern-matching rules for props', () => {
+      const topSelector = '#meow';
+
+      const result = parseRules(topSelector, { dark: true }, {
+        fontSize: '10px',
+        color: {
+          dark: 'navy',
+          default: 'green'
+        },
+        fontWeight: 'normal'
+      });
+      console.log(result);
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).toContain('color: navy;');
+    })
+
+    it('supports a default value when no pattern match found', () => {
+      const topSelector = '#meow';
+
+      const result = parseRules(topSelector, { }, {
+        fontSize: '10px',
+        color: {
+          dark: 'navy',
+          default: 'green'
+        },
+        fontWeight: 'normal'
+      });
+      console.log(result);
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).toContain('color: green;');
+    })
+
+    it('supports a pattern match rule as a function that takes the value of the named prop', () => {
+      const topSelector = '#meow';
+
+      const result = parseRules(topSelector, { mode: 'dark' }, {
+        fontSize: '10px',
+        color: {
+          mode: (value) => value === 'dark' && 'navy',
+          default: 'green'
+        },
+        fontWeight: 'normal'
+      });
+
+      console.log(result);
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).toContain('color: navy;');
+    })
+
+    it('tries the next valid match when the current matcher returns null, undefined, or false', () => {
+      const topSelector = '#meow';
+
+      const result = parseRules(topSelector, { mode: 'supersayan', nextOne: 'hello' }, {
+        fontSize: '10px',
+        color: {
+          mode: (value) => value === 'dark' && 'navy',
+          nextOne: 'purple',
+          default: 'green'
+        },
+        fontWeight: 'normal'
+      });
+
+      console.log(result);
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).toContain('color: purple;');
+    })
+
+    it('uses the default value if the matched function returns null, undefined, or false', () => {
+      const topSelector = '#meow';
+
+      const result = parseRules(topSelector, { mode: 'supersayan' }, {
+        fontSize: '10px',
+        color: {
+          mode: (value) => value === 'dark' && 'navy',
+          default: 'green'
+        },
+        fontWeight: 'normal'
+      });
+
+      console.log(result);
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).toContain('color: green;');
+    })
+
+    it('uses only the first match found, even when there are multiple valid matches', () => {
+      const topSelector = '#meow';
+
+      const result = parseRules(topSelector, { mode: 'dark', nextOne: 'hello' }, {
+        fontSize: '10px',
+        color: {
+          mode: (value) => value === 'dark' && 'navy',
+          nextOne: 'purple',
+          default: 'green'
+        },
+        fontWeight: 'normal'
+      });
+
+      console.log(result);
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).toContain('color: navy;');
+    })
+
+    it('skips the rule entirely if there is no match and no default value', () => {
+      const topSelector = '#meow';
+
+      const result = parseRules(topSelector, { mode: 'something unknown', nextOne: 'hello' }, {
+        fontSize: '10px',
+        color: {
+          mode: (value) => value === 'dark' && 'navy',
+          kittensEverywhere: 'purple'
+        },
+        fontWeight: 'normal'
+      });
+
+      console.log(result);
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).not.toEqual(expect.arrayContaining([
+        expect.stringContaining('color:')
+      ]));
+    })
+  })
 })
