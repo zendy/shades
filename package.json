@@ -2,6 +2,8 @@
   "name": "@bupa-digital/shades",
   "author": "Bupa Digital Australia - Front-End Team <npm-digital@bupa.com.au>",
   "version": "0.3.0",
+  "homepage": "https://github.com/bupa-digital/shades",
+  "repository": "https://github.com/bupa-digital/shades",
   "main": "./lib/index.js",
   "scripts": {
     "purge": "rm -rf ./dist",
