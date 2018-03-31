@@ -95,6 +95,19 @@ const colours = {
   }
 }
 
+// You can use just about any valid CSS with it (not sure about keyframes yet though)
+const SimpleBox = shades.div({
+  padding: '10px',
+  boxShadow: '3px 3px 3px #000',
+  color: '#000',
+  [':hover']: {
+    textDecoration: 'underline'
+  },
+  ['::before']: {
+    content: 'hello there'
+  }
+});
+
 // Here we showcase a few magical features you can use in shades rules,
 // specifically, you can use functions that take props as rules,
 // and even do pattern matching on props!
@@ -139,12 +152,12 @@ const Button = shades.button({
 
 export default () => {
   return (
-    <div>
+    <SimpleBox>
       <Button light>Hello there</Button>
       <Button dark>Goodbye there</Button>
       <Button mode="super">Goodbye there</Button>
       <Button>This is plain</Button>
-    </div>
+    </SimpleBox>
   )
 }
 ```

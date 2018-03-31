@@ -5,6 +5,22 @@
   "homepage": "https://github.com/bupa-digital/shades",
   "repository": "https://github.com/bupa-digital/shades",
   "license": "MIT",
+  "keywords": [
+    "react",
+    "web components",
+    "shadow dom",
+    "dom",
+    "css",
+    "css in js",
+    "es6",
+    "es7",
+    "functional",
+    "functional programming",
+    "fp",
+    "styles",
+    "styling",
+    "ramda"
+  ],
   "main": "./lib/index.js",
   "scripts": {
     "purge": "rm -rf ./dist",
