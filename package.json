@@ -4,6 +4,7 @@
   "version": "0.3.1",
   "homepage": "https://github.com/bupa-digital/shades",
   "repository": "https://github.com/bupa-digital/shades",
+  "license": "MIT",
   "main": "./lib/index.js",
   "scripts": {
     "purge": "rm -rf ./dist",
