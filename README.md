@@ -104,6 +104,9 @@ const Button = shades.button({
     dark: colours.button.border.dark
   },
   backgroundColor: {
+    // Only the first match will become the value of this rule.
+    // If there is a default value defined, then that will be the value
+    // if there are no matches.
     dark: colours.button.dark,
     light: colours.button.light,
     // Yep, even functions can be used in pattern matching. In this case,
