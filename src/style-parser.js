@@ -118,7 +118,6 @@ export const parseRules = curry(
       }
 
       if (isPatternMatch) {
-        console.log('pattern match')
         const { default: defaultValue, ...matchers } = value;
         const allPropNames = Object.keys(props);
         const allMatchers = Object.keys(matchers);
