@@ -73,7 +73,8 @@
     "html-tag-names": "^1.1.2",
     "object-hash": "^1.2.0",
     "react-html-attributes": "^1.4.1",
-    "svg-tag-names": "^1.1.1"
+    "svg-tag-names": "^1.1.1",
+    "tiza": "^2.1.0"
   },
   "jest": {
     "verbose": true,

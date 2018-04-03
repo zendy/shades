@@ -37,6 +37,32 @@ import {
   reduceWhile
 } from 'ramda';
 
+import tiza from 'tiza';
+
+const logMagenta = tiza.bold().color('magenta').text;
+const logBlue = tiza.bold().color('cornflowerblue').text;
+const logPurple = tiza.bold().color('mediumorchid').text
+const logOrange = tiza.bold().color('darkorange').text;
+
+const shadesLog = (displayName = 'Shades') => (
+  tiza.bold().color('cornflowerblue').text(`${displayName}: `).reset()
+)
+
+const runIfEnabled = (toggleSwitch) => (callbackFn) => (...args) => {
+  if (toggleSwitch) return callbackFn(...args);
+}
+
+const getLoggers = ({ showDebug, displayName }) => {
+  const runner = runIfEnabled(showDebug);
+  const logForTag = shadesLog(displayName);
+
+  return ({
+    matchNotFound: runner(({ ruleName }) => (
+      logForTag.log('No pattern for ', logMagenta(ruleName), ' was matched, and no default was specified.'))
+    )
+  });
+}
+
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
 const asPseudoElement = (key) => `::${dasherize(key)}`;
 
@@ -69,89 +95,97 @@ const createNestedSelector = (parent, child) => {
 
 const whenFunctionCallWith = (...argsToGive) => (value) => valueAsFunction(value)(...argsToGive);
 
-export const parseRules = curry(
-  (parentSelector, props, rules) => (
-    Object.entries(rules).reduce((result, [key, value]) => {
-      const isFunctionRule = isFunction(value);
-      const hasObjectLiteral = isObjectLiteral(value);
-      const hasNestedRules = hasObjectLiteral || isFunctionRule;
+export const parseRules = ({ showDebug, displayName }) => {
+  const logger = getLoggers({ showDebug, displayName });
+  const actualParser = curry(
+    (parentSelector, props, rules) => (
+      Object.entries(rules).reduce((result, [key, value]) => {
+        const isFunctionRule = isFunction(value);
+        const hasObjectLiteral = isObjectLiteral(value);
+        const hasNestedRules = hasObjectLiteral || isFunctionRule;
 
-      const hasAtRuleBlock = isAtRule(key) && hasNestedRules;
-      const shouldBeCombinedSelector = isSelectorOrPseudo(key) && hasNestedRules;
-      const isPatternMatch = (
-        hasObjectLiteral
-        && !hasAtRuleBlock
-        && !shouldBeCombinedSelector
-        && !isFunctionRule
-      );
-
-      if (hasAtRuleBlock) {
-        const additionalRules = parseRules(parentSelector, props, value);
-
-        return {
-          ...result,
-          [key]: additionalRules
-        }
-      }
-
-      if (shouldBeCombinedSelector) {
-        const mergedSelector = createNestedSelector(parentSelector, key);
-        const additionalRules = (
-          value
-          >> when(isFunction).onlyThen(fn => fn(props))
-          >> parseRules(mergedSelector, props)
+        const hasAtRuleBlock = isAtRule(key) && hasNestedRules;
+        const shouldBeCombinedSelector = isSelectorOrPseudo(key) && hasNestedRules;
+        const isPatternMatch = (
+          hasObjectLiteral
+          && !hasAtRuleBlock
+          && !shouldBeCombinedSelector
+          && !isFunctionRule
         );
 
-        return {
-          ...result,
-          ...additionalRules
+        if (hasAtRuleBlock) {
+          const additionalRules = actualParser(parentSelector, props, value);
+
+          return {
+            ...result,
+            [key]: additionalRules
+          }
         }
-      }
 
-      // Rule-level stuff below
+        if (shouldBeCombinedSelector) {
+          const mergedSelector = createNestedSelector(parentSelector, key);
+          const additionalRules = (
+            value
+            >> when(isFunction).onlyThen(fn => fn(props))
+            >> actualParser(mergedSelector, props)
+          );
 
-      const existingRules = result[parentSelector] || [];
+          return {
+            ...result,
+            ...additionalRules
+          }
+        }
 
-      const falseToNull = (value) => {
-        if (value === false) return null;
-        return value;
-      }
+        // Rule-level stuff below
 
-      if (isPatternMatch) {
-        const { default: defaultValue, ...matchers } = value;
-        const allPropNames = Object.keys(props);
-        const allMatchers = Object.keys(matchers);
-        const matchingProps = intersection(allPropNames, allMatchers);
+        const existingRules = result[parentSelector] || [];
 
-        const computedValue = matchingProps >> reduceWhile(
-          isUndefinedOrFalse,
-          (previous, propName) => matchers[propName] >> whenFunctionCallWith(props[propName]),
-          false
-        ) >> falseToNull >> defaultTo(defaultValue);
+        const falseToNull = (value) => {
+          if (value === false) return null;
+          return value;
+        }
 
-        // If the match ends up not giving a real value (and there is no default),
-        // then we just skip this rule entirely.
-        if (isUndefinedOrFalse(computedValue)) return result;
+        if (isPatternMatch) {
+          const { default: defaultValue, ...matchers } = value;
+          const allPropNames = Object.keys(props);
+          const allMatchers = Object.keys(matchers);
+          const matchingProps = intersection(allPropNames, allMatchers);
+
+          const computedValue = matchingProps >> reduceWhile(
+            isUndefinedOrFalse,
+            (previous, propName) => matchers[propName] >> whenFunctionCallWith(props[propName]),
+            false
+          ) >> falseToNull >> defaultTo(defaultValue);
+
+          // If the match ends up not giving a real value (and there is no default),
+          // then we just skip this rule entirely.
+          if (isUndefinedOrFalse(computedValue)) {
+            logger.matchNotFound({ ruleName: key });
+            return result;
+          }
+
+          return {
+            ...result,
+            [parentSelector]: [
+              ...existingRules,
+              createStyleRule(key, computedValue)
+            ]
+          };
+        }
 
         return {
           ...result,
           [parentSelector]: [
             ...existingRules,
-            createStyleRule(key, computedValue)
+            createStyleRule(key, (value >> whenFunctionCallWith(props)))
           ]
         };
-      }
+      }, { [parentSelector]: [] })
+    )
+  );
 
-      return {
-        ...result,
-        [parentSelector]: [
-          ...existingRules,
-          createStyleRule(key, (value >> whenFunctionCallWith(props)))
-        ]
-      };
-    }, { [parentSelector]: [] })
-  )
-);
+  return actualParser;
+};
 
 export const stringifyRules = (rules) => (
   Object.entries(rules).reduce((result, [key, value]) => {
@@ -215,7 +249,7 @@ const appendRule = curry(
   }
 );
 
-export const compileToCss = pipe(parseRules, stringifyRules);
+export const setupCssParser = (config) => pipe(parseRules(config), stringifyRules);
 
 const shadeStore = stateful({
   index: 1,
@@ -236,7 +270,7 @@ export const generateClassName = () => {
   return newClassName;
 }
 
-const css = (className, styleRules, target, props = {}) => {
+const css = ({ className, props = {}, target, showDebug, displayName }, styleRules) => {
   const theSheet = getSheetFor(target);
   const generatedSelector = classNameWithProps(className, props);
   const generatedClassName = generatedSelector >> asClassName;
@@ -246,6 +280,8 @@ const css = (className, styleRules, target, props = {}) => {
   if (alreadyCached) return generatedSelector;
 
   shadeStore.lift(({ addToCache }) => addToCache(generatedClassName));
+
+  const compileToCss = setupCssParser({ showDebug, displayName })
 
   const styleString = compileToCss(generatedClassName, props, styleRules).forEach(
     appendRule(theSheet)

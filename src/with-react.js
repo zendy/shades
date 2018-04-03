@@ -20,6 +20,10 @@ import {
 import css, { generateClassName } from './style-parser';
 
 import {
+  joinWith
+} from './utilities';
+
+import {
   joinString
 } from './utilities';
 
@@ -30,13 +34,14 @@ const wrapReactName = curry(
 export const Shades = compose(
   setDisplayName('Shades'),
   withContext(
-    { targetDom: PropTypes.object },
-    props => ({ targetDom: props.to })
+    { targetDom: PropTypes.object, showDebug: PropTypes.bool },
+    props => ({ targetDom: props.to, showDebug: props.showDebug })
   )
 )(props => props.children);
 
-const getShadeTarget = getContext({
-  targetDom: PropTypes.object
+const applyShadeContext = getContext({
+  targetDom: PropTypes.object,
+  showDebug: PropTypes.bool
 })
 
 const prettyComponentFactory = curry(
@@ -44,18 +49,22 @@ const prettyComponentFactory = curry(
     const baseClassName = generateClassName();
 
     const prettyElement = setDisplayName(`shades.${tagName}`)(
-      ({ targetDom, children, className, ...props }) => {
-        const fullClassName = css(baseClassName, styleRules, targetDom, props);
+      ({ targetDom, showDebug, children, className, ...props }) => {
+        const fullClassName = css(
+          { className: baseClassName, target: targetDom, props, showDebug, displayName: `shades.${tagName}` },
+          styleRules
+        );
+
         const propsToForward = props >> pickBy((val, key) => shouldForwardProperty(tagName, key));
 
         return React.createElement(tagName, {
-          className: joinString(fullClassName, className),
+          className: joinWith(fullClassName, className)(' '),
           ...propsToForward
         }, children);
       }
     )
 
-    return prettyElement >> getShadeTarget >> pure;
+    return prettyElement >> applyShadeContext >> pure;
   }
 )
 

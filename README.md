@@ -72,6 +72,16 @@ customElements.define('counter-view', class extends HTMLElement {
 });
 ```
 
+If you want to have shades show you pretty log messages to tell you what it's doing, pass `showDebug={true}` to the Shades provider, like so:
+
+```
+<Shades to={shadowRoot} showDebug={true}>
+  <CounterView {...props} />
+</Shades>
+```
+
+(Remember to turn that off for production builds!)
+
 And to use shades to style stuff, here's an example of most of its functionality:
 
 `components/CounterView.js`

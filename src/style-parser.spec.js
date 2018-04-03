@@ -1,15 +1,17 @@
 import {
   parseRules,
   stringifyRules,
-  compileToCss
+  setupCssParser
 } from './style-parser';
 
+const parseRulesNoDebug = parseRules({ showDebug: false });
+const parseRulesWithDebug = parseRules({ showDebug: true });
 
 describe('parseRules', () => {
   it('takes an object of rules and gives me back some more rules as strings', () => {
     const topSelector = '#meow';
 
-    const result = parseRules(topSelector, {}, {
+    const result = parseRulesNoDebug(topSelector, {}, {
       fontSize: '10px',
       color: 'blue',
       fontWeight: 'normal'
@@ -22,7 +24,7 @@ describe('parseRules', () => {
     const topSelectorHover = [topSelector, 'hover'].join(':')
     const topSelectorBefore = [topSelector, 'before'].join('::')
 
-    const result = parseRules(topSelector, {}, {
+    const result = parseRulesNoDebug(topSelector, {}, {
       fontSize: '10px',
       color: 'blue',
       ':hover': {
@@ -46,7 +48,7 @@ describe('parseRules', () => {
     const topSelectorHover = `${topSelector}:hover`;
     const mq = '@media screen and (max-width: 800px)';
 
-    const result = parseRules(topSelector, { }, {
+    const result = parseRulesNoDebug(topSelector, { }, {
       fontSize: '10px',
       color: 'blue',
       [mq]: {
@@ -65,22 +67,6 @@ describe('parseRules', () => {
       })
     });
 
-
-    console.log(result)
-
-    console.log(compileToCss(topSelector, {}, {
-      fontSize: '10px',
-      color: 'blue',
-      [mq]: {
-        fontSize: '90px',
-        background: 'green',
-        ':hover': {
-          border: '1px solid red',
-          fontWeight: '800'
-        }
-      }
-    }));
-
     expect(result).toHaveProperty([topSelector]);
     expect(result).toHaveProperty([mq, topSelector]);
     expect(result).toHaveProperty([mq, topSelectorHover]);
@@ -90,7 +76,7 @@ describe('parseRules', () => {
     it('supports pattern-matching rules for props', () => {
       const topSelector = '#meow';
 
-      const result = parseRules(topSelector, { dark: true }, {
+      const result = parseRulesNoDebug(topSelector, { dark: true }, {
         fontSize: '10px',
         color: {
           dark: 'navy',
@@ -106,7 +92,7 @@ describe('parseRules', () => {
     it('supports a default value when no pattern match found', () => {
       const topSelector = '#meow';
 
-      const result = parseRules(topSelector, { }, {
+      const result = parseRulesNoDebug(topSelector, { }, {
         fontSize: '10px',
         color: {
           dark: 'navy',
@@ -122,7 +108,7 @@ describe('parseRules', () => {
     it('supports a pattern match rule as a function that takes the value of the named prop', () => {
       const topSelector = '#meow';
 
-      const result = parseRules(topSelector, { mode: 'dark' }, {
+      const result = parseRulesNoDebug(topSelector, { mode: 'dark' }, {
         fontSize: '10px',
         color: {
           mode: (value) => value === 'dark' && 'navy',
@@ -139,7 +125,7 @@ describe('parseRules', () => {
     it('tries the next valid match when the current matcher returns null, undefined, or false', () => {
       const topSelector = '#meow';
 
-      const result = parseRules(topSelector, { mode: 'supersayan', nextOne: 'hello' }, {
+      const result = parseRulesNoDebug(topSelector, { mode: 'supersayan', nextOne: 'hello' }, {
         fontSize: '10px',
         color: {
           mode: (value) => value === 'dark' && 'navy',
@@ -157,7 +143,7 @@ describe('parseRules', () => {
     it('uses the default value if the matched function returns null, undefined, or false', () => {
       const topSelector = '#meow';
 
-      const result = parseRules(topSelector, { mode: 'supersayan' }, {
+      const result = parseRulesNoDebug(topSelector, { mode: 'supersayan' }, {
         fontSize: '10px',
         color: {
           mode: (value) => value === 'dark' && 'navy',
@@ -174,7 +160,7 @@ describe('parseRules', () => {
     it('uses only the first match found, even when there are multiple valid matches', () => {
       const topSelector = '#meow';
 
-      const result = parseRules(topSelector, { mode: 'dark', nextOne: 'hello' }, {
+      const result = parseRulesNoDebug(topSelector, { mode: 'dark', nextOne: 'hello' }, {
         fontSize: '10px',
         color: {
           mode: (value) => value === 'dark' && 'navy',
@@ -192,7 +178,7 @@ describe('parseRules', () => {
     it('skips the rule entirely if there is no match and no default value', () => {
       const topSelector = '#meow';
 
-      const result = parseRules(topSelector, { mode: 'something unknown', nextOne: 'hello' }, {
+      const result = parseRulesNoDebug(topSelector, { mode: 'something unknown', nextOne: 'hello' }, {
         fontSize: '10px',
         color: {
           mode: (value) => value === 'dark' && 'navy',
