@@ -1,4 +1,3 @@
-
 import htmlAttributes from 'react-html-attributes';
 import memoize from 'fast-memoize';
 import reactProps from './react-props';
@@ -11,7 +10,7 @@ const globalHtmlProps = htmlAttributes['*'];
 
 const isHtmlProp = (tagName, propName) => (
   globalHtmlProps.includes(propName)
-  || htmlAttributes[tagName].includes(propName)
+  || htmlAttributes?.[tagName]?.includes(propName)
 );
 
 const isReactProp = (propName) => reactProps.includes(propName);

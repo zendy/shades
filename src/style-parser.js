@@ -187,6 +187,12 @@ export const parseRules = ({ showDebug, displayName }) => {
   return actualParser;
 };
 
+/**
+ * stringifyRules: takes an object where the key is the selector and the value
+ * is the array of rules for that selector. Returns an array of CSS rule strings.
+ * @param  {object} rules   Object of selectors and values
+ * @return {array<string>}  List of rules to add
+ */
 export const stringifyRules = (rules) => (
   Object.entries(rules).reduce((result, [key, value]) => {
     if (isArray(value)) {
@@ -245,7 +251,7 @@ const classNameWithProps = (baseClassName, props) => {
 const appendRule = curry(
   (target, rule) => {
     const index = target.cssRules.length;
-    return target.insertRule(rule, index);
+    return target?.insertRule(rule, index) ?? target?.addRule(rule);
   }
 );
 

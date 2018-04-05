@@ -48,7 +48,13 @@
     "babel-plugin-pipe-composition": "^0.1.1",
     "babel-plugin-transform-custom-element-classes": "^0.1.0",
     "cross-env": "^5.1.1",
+    "enzyme": "^3.3.0",
+    "enzyme-adapter-react-16": "^1.1.1",
+    "enzyme-to-json": "^3.3.3",
     "jest": "^22.4.2",
+    "jest-environment-enzyme": "^6.0.0",
+    "jest-enzyme": "^6.0.0",
+    "jsdom": "^11.7.0",
     "prop-types": "^15.6.1",
     "ramda": "^0.25.0",
     "react": "^16.2.0",
@@ -80,6 +86,18 @@
     "verbose": true,
     "transform": {
       "^.+\\.js$": "babel-jest"
-    }
+    },
+    "setupFiles": [
+      "./test-setup.js"
+    ],
+    "setupTestFrameworkScriptFile": "./node_modules/jest-enzyme/lib/index.js",
+    "snapshotSerializers": [
+      "enzyme-to-json/serializer"
+    ],
+    "unmockedModulePathPatterns": [
+      "react",
+      "enzyme",
+      "jest-enzyme"
+    ]
   }
 }

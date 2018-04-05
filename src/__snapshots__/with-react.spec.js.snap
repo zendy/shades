@@ -1,0 +1,48 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Shades DOM Renders without incident 1`] = `
+<Shades
+  to={
+    <head>
+      <style
+        data-shades="true"
+      />
+    </head>
+  }
+>
+  <Component
+    to={
+      <head>
+        <style
+          data-shades="true"
+        />
+      </head>
+    }
+  >
+    <pure(getContext(shades.h1))
+      dark={true}
+    >
+      <getContext(shades.h1)
+        dark={true}
+      >
+        <shades.h1
+          dark={true}
+          targetDom={
+            <head>
+              <style
+                data-shades="true"
+              />
+            </head>
+          }
+        >
+          <h1
+            className="shades-1-0a5820ffa310da513618d2a4f400ba05be7c12cb "
+          >
+            Hello
+          </h1>
+        </shades.h1>
+      </getContext(shades.h1)>
+    </pure(getContext(shades.h1))>
+  </Component>
+</Shades>
+`;
