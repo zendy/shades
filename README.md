@@ -4,6 +4,10 @@ This is an experimental CSS-in-JS library, designed to be very similar to Glamor
 
 Updates coming continuously, as we finish up our final testing and bug fixing, in preparation for rolling out to Bupa web platforms.
 
+## Live REPL
+
+If you want to try it out in a repl, [here's one I prepared earlier!](https://codesandbox.io/s/v3ypj97xz3)
+
 ## Why
 
 This library follows very closely with the syntax of certain prior-art, particularly: Glamorous.  Glamorous, in turn, follows a similar path to Aphrodite.  I looked into the pros and cons of both the Object-Literal style and the Template Literal style for building Shades, and decided to pursue the former, not because template literals are unfamiliar, but because I felt that the reasons I had for even considering a CSS-in-JS library were to get away from the CSS language.  So it made most sense to me to stay closer to JavaScript, in this case.  One day in the future this may change, but for now, if you want Template Literal syntax in addition to the Object Literal syntax, you will need to submit a PR :)
