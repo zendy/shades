@@ -55,7 +55,7 @@ mq().from({
 // @media (min-height:700px) and (min-aspect-ratio:2/5) and (max-height:1200px) and (max-aspect-ratio:7/13)
 ```
 
-> Note: Some features support [Magic Numbers](#Magic Numbers), which add a default unit to plain number values.
+> Note: Some features support [Magic Numbers](#magic-numbers), which add a default unit to plain number values.
 
 Range features are:
 
