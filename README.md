@@ -1,4 +1,8 @@
-# Shades!
+<img src="docs/media/sunglasses.svg" height="300px" alt="Shades icon">
+
+> <div>Icon made by <a href="https://www.flaticon.com/authors/creaticca-creative-agency" title="Creaticca Creative Agency">Creaticca Creative Agency</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+
+# Shades
 
 This is an experimental CSS-in-JS library, designed to be very similar to Glamorous, but supports rendering styles to shadow dom (or anywhere else you want, really)
 
