@@ -37,8 +37,6 @@ describe('parseRules', () => {
       fontWeight: 'normal'
     });
 
-    console.log(result);
-
     expect(result).toHaveProperty([topSelector]);
     expect(result).toHaveProperty([topSelectorHover]);
     expect(result).toHaveProperty([topSelectorBefore]);
@@ -84,7 +82,7 @@ describe('parseRules', () => {
         },
         fontWeight: 'normal'
       });
-      console.log(result);
+
       expect(result).toHaveProperty([topSelector]);
       expect(result[topSelector]).toContain('color: navy;');
     })
@@ -100,7 +98,7 @@ describe('parseRules', () => {
         },
         fontWeight: 'normal'
       });
-      console.log(result);
+
       expect(result).toHaveProperty([topSelector]);
       expect(result[topSelector]).toContain('color: green;');
     })
@@ -117,7 +115,7 @@ describe('parseRules', () => {
         fontWeight: 'normal'
       });
 
-      console.log(result);
+
       expect(result).toHaveProperty([topSelector]);
       expect(result[topSelector]).toContain('color: navy;');
     })
@@ -135,7 +133,6 @@ describe('parseRules', () => {
         fontWeight: 'normal'
       });
 
-      console.log(result);
       expect(result).toHaveProperty([topSelector]);
       expect(result[topSelector]).toContain('color: purple;');
     })
@@ -152,7 +149,6 @@ describe('parseRules', () => {
         fontWeight: 'normal'
       });
 
-      console.log(result);
       expect(result).toHaveProperty([topSelector]);
       expect(result[topSelector]).toContain('color: green;');
     })
@@ -170,7 +166,6 @@ describe('parseRules', () => {
         fontWeight: 'normal'
       });
 
-      console.log(result);
       expect(result).toHaveProperty([topSelector]);
       expect(result[topSelector]).toContain('color: navy;');
     })
@@ -187,7 +182,6 @@ describe('parseRules', () => {
         fontWeight: 'normal'
       });
 
-      console.log(result);
       expect(result).toHaveProperty([topSelector]);
       expect(result[topSelector]).not.toEqual(expect.arrayContaining([
         expect.stringContaining('color:')

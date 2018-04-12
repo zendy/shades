@@ -3,7 +3,8 @@ import memoize from 'fast-memoize';
 import reactProps from './react-props';
 
 import {
-  isString
+  isString,
+  startsWithAny
 } from './utilities';
 
 const globalHtmlProps = htmlAttributes['*'];
@@ -15,10 +16,13 @@ const isHtmlProp = (tagName, propName) => (
 
 const isReactProp = (propName) => reactProps.includes(propName);
 
+const isDataOrAria = startsWithAny('data-', 'aria-');
+
 const shouldForwardProperty = (tagName, propName) => (
   !isString(tagName)
   || isReactProp(propName)
   || isHtmlProp(tagName, propName)
+  || isDataOrAria(propName)
 );
 
 export default memoize(shouldForwardProperty);

@@ -9,6 +9,7 @@ import {
    complement,
    toLower,
    toUpper,
+   startsWith,
    anyPass,
    allPass,
    equals,
@@ -59,6 +60,7 @@ export const isArray            = isType('array');
 export const isString           = isType('string');
 export const isFunction         = isType('function');
 export const isObjectLiteral    = isType('object');
+export const isNumber           = isType('number');
 
 export const isDefined          = complement(isNil);
 export const isNotDefined       = isNil;
@@ -77,6 +79,7 @@ export const joinWith           = (...values)  => (separator)  => values.join(se
 export const getSubstring       = (start, end) => (original)   => original.substring(start, end);
 export const getSubstringUntil  = (end)        => getSubstring(0, end);
 export const getSubstringAfter  = (start)      => getSubstring(start);
+export const startsWithAny      = (...searchStrs) => searchStrs >> map(startsWith) >> anyPass
 
 export const joinString = (first, ...items) => {
   if (first >> isArray) return first >> join('');
@@ -195,6 +198,27 @@ export const match = (matchers, fallback = id) => (value) => {
   return matchers[value](value);
 }
 
+export const betterSet = (initialData = []) => {
+  const internal = new Set(initialData);
+
+  const outerMethods = {
+    add:     (...items) => items.forEach(item => internal.add(item)) || outerMethods,
+    remove:  (...items) => items.forEach(item => internal.delete(item)) || outerMethods,
+    forEach: (...args) => internal.forEach(...args) || outerMethods,
+    clear:   () => internal.clear() && outerMethods,
+    has:     (...args) => internal.has(...args),
+    map:     (mapFn) => [...internal].map(mapFn) |> betterSet,
+    filter:  (filterFn) => [...internal].filter(filterFn) |> betterSet,
+    reduce:  (reduceFn, initialValue) => [...internal].reduce(reduceFn, initialValue),
+    get size() {
+      return internal.size;
+    },
+    toArray: () => Array.from(internal)
+  }
+
+  return outerMethods;
+};
+
 export const stateful = (initialValue, actions) => {
   let _internalState = initialValue;
   const reducers = Object.entries(actions).reduce((result, [name, fn]) => ({
@@ -239,12 +263,12 @@ export const stateful = (initialValue, actions) => {
   return innerSelf;
 }
 
-const logMagenta = (...values) => tiza.bold().color('magenta').text(values.join(' ')).reset();
-const logBlue    = (...values) => tiza.bold().color('cornflowerblue').text(values.join(' ')).reset();
-const logPurple  = (...values) => tiza.bold().color('mediumorchid').text(values.join(' ')).reset()
-const logOrange  = (...values) => tiza.bold().color('darkorange').text(values.join(' ')).reset();
+const logMagenta = (...values) => tiza.bold().color('magenta')        .text(values.join(' ')).reset();
+const logBlue    = (...values) => tiza.bold().color('cornflowerblue') .text(values.join(' ')).reset();
+const logPurple  = (...values) => tiza.bold().color('mediumorchid')   .text(values.join(' ')).reset()
+const logOrange  = (...values) => tiza.bold().color('darkorange')     .text(values.join(' ')).reset();
 
-const logError   = () => tiza.bold().underline().color('darkorange').text('Error: ').reset();
+const logError   = () => tiza.bold().underline().color('darkorange')  .text('Error: ')  .reset();
 const logWarning = () => tiza.bold().underline().color('mediumorchid').text('Warning: ').reset();
 const logInfo    = () => tiza.bold().text('Info: ').reset();
 
@@ -278,4 +302,16 @@ export const getLoggers = ({ showDebug, displayName }) => {
     warning: runner(logger.warning),
     info:    runner(logger.info)
   });
+}
+
+export const element = (name, view) => {
+  if (view) return register(name, component(view));
+
+  const receiveComponentOrConfig = (original) => register(name, component(original));
+  // Just a silly hack to let me return a function *and* revealing modules
+  receiveComponentOrConfig.props = (...propNames) => (original) => (
+    register(name, component(original).watchProps(...propNames))
+  );
+
+  return receiveComponentOrConfig;
 }

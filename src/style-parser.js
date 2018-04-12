@@ -37,37 +37,15 @@ import {
   reduceWhile
 } from 'ramda';
 
-import tiza from 'tiza';
-
-const logMagenta = tiza.bold().color('magenta').text;
-const logBlue = tiza.bold().color('cornflowerblue').text;
-const logPurple = tiza.bold().color('mediumorchid').text
-const logOrange = tiza.bold().color('darkorange').text;
-
-const shadesLog = (displayName = 'Shades') => (
-  tiza.bold().color('cornflowerblue').text(`${displayName}: `).reset()
-)
-
-const runIfEnabled = (toggleSwitch) => (callbackFn) => (...args) => {
-  if (toggleSwitch) return callbackFn(...args);
-}
-
-const getLoggers = ({ showDebug, displayName }) => {
-  const runner = runIfEnabled(showDebug);
-  const logForTag = shadesLog(displayName);
-
-  return ({
-    matchNotFound: runner(({ ruleName }) => (
-      logForTag.log('No pattern for ', logMagenta(ruleName), ' was matched, and no default was specified.'))
-    )
-  });
-}
+import {
+  getLoggers,
+  startsWithAny
+} from './utilities';
 
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
 const asPseudoElement = (key) => `::${dasherize(key)}`;
 
 const log = (...args) => console.log(...args);
-const startsWithAny = (...searchStrs) => searchStrs >> map(startsWith) >> anyPass
 
 const isSelector = startsWithAny('.', '#', '>');
 
@@ -95,8 +73,8 @@ const createNestedSelector = (parent, child) => {
 
 const whenFunctionCallWith = (...argsToGive) => (value) => valueAsFunction(value)(...argsToGive);
 
-export const parseRules = ({ showDebug, displayName }) => {
-  const logger = getLoggers({ showDebug, displayName });
+export const parseRules = (config) => {
+  const logger = getLoggers(config);
   const actualParser = curry(
     (parentSelector, props, rules) => (
       Object.entries(rules).reduce((result, [key, value]) => {

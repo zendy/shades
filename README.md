@@ -4,6 +4,10 @@ This is an experimental CSS-in-JS library, designed to be very similar to Glamor
 
 Updates coming continuously, as we finish up our final testing and bug fixing, in preparation for rolling out to Bupa web platforms.
 
+## Live REPL
+
+If you want to try it out in a repl, [here's one I prepared earlier!](https://codesandbox.io/s/v3ypj97xz3)
+
 ## Why
 
 This library follows very closely with the syntax of certain prior-art, particularly: Glamorous.  Glamorous, in turn, follows a similar path to Aphrodite.  I looked into the pros and cons of both the Object-Literal style and the Template Literal style for building Shades, and decided to pursue the former, not because template literals are unfamiliar, but because I felt that the reasons I had for even considering a CSS-in-JS library were to get away from the CSS language.  So it made most sense to me to stay closer to JavaScript, in this case.  One day in the future this may change, but for now, if you want Template Literal syntax in addition to the Object Literal syntax, you will need to submit a PR :)
@@ -32,7 +36,7 @@ Here's an example of what a top level web component might look like:
 
 `components/App.js`:
 
-```javascript
+```js
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Shades } from '@bupa-digital/shades/react';
@@ -74,7 +78,7 @@ customElements.define('counter-view', class extends HTMLElement {
 
 If you want to have shades show you pretty log messages to tell you what it's doing, pass `showDebug={true}` to the Shades provider, like so:
 
-```
+```js
 <Shades to={shadowRoot} showDebug={true}>
   <CounterView {...props} />
 </Shades>
@@ -86,7 +90,7 @@ And to use shades to style stuff, here's an example of most of its functionality
 
 `components/CounterView.js`
 
-```javascript
+```js
 import React from 'react';
 import shades from '@bupa-digital/shades/react';
 import { states } from '@bupa-digital/shades/helpers';
@@ -160,16 +164,43 @@ const Button = shades.button({
   })
 });
 
-export default () => {
-  return (
-    <SimpleBox>
-      <Button light>Hello there</Button>
-      <Button dark>Goodbye there</Button>
-      <Button mode="super">Goodbye there</Button>
-      <Button>This is plain</Button>
-    </SimpleBox>
-  )
-}
+export default () => (
+  <SimpleBox>
+    <Button light>Hello there</Button>
+    <Button dark>Goodbye there</Button>
+    <Button mode="super">Goodbye there</Button>
+    <Button>This is plain</Button>
+  </SimpleBox>
+);
 ```
+
+Shades will also happily pass along valid DOM properties to the styled element, such as `alt`, `title`, `href` for `a` tags, `src` for `img` and others, you get the picture.  Valid React props are also fully supported, such as `className`, `onClick`, etc.
+
+Example:
+
+```js
+const Linky = shades.a({
+  fontSize: '20px',
+  fontWeight: 'bold'
+});
+
+export default () => (
+  <Linky href="hello.html" title="This is a link" onClick={(event) => console.log('Wow, I was clicked!')}>
+    Go to greeting
+  </Linky>
+);
+```
+
+You can also pass along `data` and `aria` attributes as you please!
+
+```js
+<Button data-greeting="Hello there" aria-label="This is not a good label, just an example">
+  Click me!
+</Button>
+```
+
+## Helpers
+
+Check out the [documentation on our built-in helpers](docs/helpers.md)
 
 More documentation coming soon, but I hope this helps you to get started.

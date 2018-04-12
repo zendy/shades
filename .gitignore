@@ -4,6 +4,7 @@ node_modules/
 .DS_Store
 dist/
 *.disabled
-lib/
-react/
-helpers/
+/lib/
+/react/
+/helpers/
+.tern-project
