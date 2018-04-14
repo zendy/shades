@@ -25,8 +25,8 @@
   "scripts": {
     "purge": "rm -rf ./lib ./helpers ./react",
     "build": "webpack --config ./webpack.config.js",
-    "test": "cross-env NODE_ENV=test jest --colors --no-cache",
-    "test:watch": "cross-env NODE_ENV=test jest --watch --no-cache",
+    "test": "cross-env NODE_ENV=test jest --colors",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
     "postversion": "git push --tags"
   },
   "devDependencies": {
