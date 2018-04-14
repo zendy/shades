@@ -209,4 +209,4 @@ You can also pass along `data` and `aria` attributes as you please!
 
 Check out the [documentation on our built-in helpers](docs/helpers.md)
 
-More documentation coming soon, but I hope this helps you to get started.
+More documentation coming soon, but I hope this helps you to get started :)
