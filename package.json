@@ -23,12 +23,10 @@
   ],
   "main": "./lib/index.js",
   "scripts": {
-    "purge": "rm -rf ./dist",
+    "purge": "rm -rf ./lib ./helpers ./react",
     "build": "webpack --config ./webpack.config.js",
     "test": "cross-env NODE_ENV=test jest --no-cache",
     "test:watch": "cross-env NODE_ENV=test jest --watch --no-cache",
-    "prepublish": "yarn test && yarn build",
-    "preversion": "yarn test && yarn build",
     "postversion": "git push --tags"
   },
   "devDependencies": {

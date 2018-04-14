@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+  - "9"
+
+script: yarn run test
+
+before_deploy: yarn run build
+
+deploy:
+  provider: npm
+  email: $NPM_EMAIL
+  api_key: $NPM_TOKEN
+  skip_cleanup: true # required even for a before_deploy script
+  on:
+    tags: true
