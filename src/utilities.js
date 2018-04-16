@@ -80,6 +80,7 @@ export const getSubstring       = (start, end) => (original)   => original.subst
 export const getSubstringUntil  = (end)        => getSubstring(0, end);
 export const getSubstringAfter  = (start)      => getSubstring(start);
 export const startsWithAny      = (...searchStrs) => searchStrs >> map(startsWith) >> anyPass
+export const combineStrings     = (...inputs) => inputs.filter(Boolean).join('');
 
 export const joinString = (first, ...items) => {
   if (first >> isArray) return first >> join('');

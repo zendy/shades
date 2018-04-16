@@ -1,11 +1,10 @@
-import {
-  parseRules,
-  stringifyRules,
-  setupCssParser
+import css, {
+  parseAllStyles,
+  parseAndStringify
 } from './style-parser';
 
-const parseRulesNoDebug = parseRules({ showDebug: false });
-const parseRulesWithDebug = parseRules({ showDebug: true });
+const parseRulesNoDebug = parseAllStyles
+const parseRulesWithDebug = parseAllStyles
 
 describe('parseRules', () => {
   it('takes an object of rules and gives me back some more rules as strings', () => {
@@ -189,3 +188,10 @@ describe('parseRules', () => {
     })
   })
 })
+
+describe('parseAndStringify', () => {
+  it('should ', () => {
+
+  });
+
+});
