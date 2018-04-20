@@ -13,3 +13,6 @@ deploy:
   skip_cleanup: true # required even for a before_deploy script
   on:
     tags: true
+
+notifications:
+  slack: $SLACK_TOKEN
