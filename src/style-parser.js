@@ -46,11 +46,6 @@ import {
   equals
 } from 'ramda';
 
-// TODO:
-// 1. `match` chain method for inverse patterns
-// 2. Fix debug messages
-// 3.
-
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
 const asPseudoElement = (key) => `::${dasherize(key)}`;
 
