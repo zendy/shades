@@ -26,7 +26,10 @@ import {
    find,
    nth,
    reduceWhile,
-   either
+   either,
+   mergeWith,
+   concat,
+   toPairs
 } from 'ramda';
 
 const UPPERCASE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' >> split('');
@@ -44,6 +47,49 @@ const isFalsy = (value) => !value;
 
 export const reduceWhileFalsy = curry(
   (handlerFn, list) => reduceWhile(isFalsy, handlerFn, false, list)
+);
+
+export const reduceRecord = (handlerFn, initialValue = {}) => (original) => (
+  original |>
+  toPairs |>
+  reduce(
+    (result, currentPair) => handlerFn(result, currentPair) || result,
+    initialValue
+  )
+);
+
+export const mapMerge = curry(
+  (handlerFn, original) => (
+    original |>
+    toPairs |>
+    reduce(
+      (result, [key, value]) => {
+        const combiner = mergeWith(concat, result);
+        const handlerOutput = handlerFn(key, value);
+
+        const newResult = handlerOutput && combiner(handlerOutput);
+
+        return newResult || result;
+      },
+      {}
+    )
+  )
+);
+
+export const mapFilterRecord = (handlerFn, original) => (
+  original |> toPairs |> reduce(
+    (result, [key, value]) => {
+      const outputItem = handlerFn(key, value);
+
+      const newResult = outputItem && [
+        ...result,
+        outputItem
+      ];
+
+      return newResult || result;
+    },
+    []
+  )
 );
 
 export const includes = curry(
