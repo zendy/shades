@@ -28,12 +28,43 @@ describe('Shades DOM', () => {
       }
     });
 
-    const subject = mountShades(
+    const titleSubject = mountShades(
       <Title dark>Hello</Title>
     );
 
-    expect(subject).toMatchSnapshot();
+    expect(titleSubject).toMatchSnapshot();
   });
+  it('renders a block matcher without incident', () => {
+    const Linky = shades.a({
+      background: 'purple',
+      fontWeight: {
+        dark: 600,
+        light: 200
+      }
+    }).match({
+      dark: {
+        color: 'white',
+        background: 'green'
+      },
+      light: {
+        color: 'purple',
+        background: 'white'
+      }
+    });
+
+    const darkSubject = mountShades(
+      <Linky dark>Hello</Linky>
+    );
+    expect(darkSubject).toMatchSnapshot();
+    expect(darkSubject.find('a').exists()).toBeTruthy();
+
+    const noPropsSubject = mountShades(
+      <Linky>No Props!</Linky>
+    );
+    expect(noPropsSubject).toMatchSnapshot();
+    expect(noPropsSubject.find('a').exists()).toBeTruthy();
+  });
+
   it('Forwards valid DOM props', () => {
     const Linky = shades.a({
       backgroundColor: {

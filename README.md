@@ -120,10 +120,10 @@ const SimpleBox = shades.div({
   padding: '10px',
   boxShadow: '3px 3px 3px #000',
   color: '#000',
-  [':hover']: {
+  ':hover': {
     textDecoration: 'underline'
   },
-  ['::before']: {
+  '::before': {
     content: 'hello there'
   }
 });
@@ -158,7 +158,7 @@ const Button = shades.button({
       fontWeight: 'bold',
       textDecoration: 'underline',
       // You can even do media queries way down here
-      ['@media screen and (max-width: 400px)']: {
+      '@media screen and (max-width: 400px)': {
         border: '1px dotted',
         ...states({
           active: {

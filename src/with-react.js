@@ -52,16 +52,16 @@ export const Shades = compose(
   )
 )(props => props.children);
 
-const applyShadeContext = getContext({
+const applyShadeContext = (original) => original >> getContext({
   targetDom: PropTypes.object,
   showDebug: PropTypes.bool
-})
+}) >> pure;
 
 const prettyComponentFactory = curry(
   (tagName, styleRules) => {
     const baseClassName = generateClassName();
     const prettyDisplayName = `shades.${tagName}`;
-    const prettyElement = setDisplayName(prettyDisplayName) << (
+    const prettyElement = applyShadeContext << setDisplayName(prettyDisplayName) << (
       ({ targetDom, showDebug, children, className, ...props }) => {
         const logger = getLoggers({ showDebug, displayName: prettyDisplayName });
 
@@ -93,7 +93,12 @@ const prettyComponentFactory = curry(
       }
     )
 
-    return prettyElement >> applyShadeContext >> pure;
+    prettyElement.match = (matcherRules) => prettyComponentFactory(tagName, {
+      ...styleRules,
+      '__match': matcherRules
+    });
+
+    return prettyElement;
   }
 )
 

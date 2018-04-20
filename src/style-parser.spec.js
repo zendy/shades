@@ -3,6 +3,10 @@ import css, {
   parseAndStringify
 } from './style-parser';
 
+import {
+  states
+} from './helpers';
+
 const parseRulesNoDebug = parseAllStyles
 const parseRulesWithDebug = parseAllStyles
 
@@ -48,6 +52,32 @@ describe('parseRules', () => {
     );
     expect(result[topSelectorBefore]).toEqual(
       expect.arrayContaining(['content: "hi there";', 'border: 1px solid #000;'])
+    );
+  })
+  it('supports the states.all helper', () => {
+    const topSelector = '#meow';
+    const topSelectorHover = `${topSelector}:hover`;
+    const topSelectorFocus = `${topSelector}:focus`;
+
+    const result = parseRulesNoDebug(topSelector, {}, {
+      fontSize: '10px',
+      color: 'blue',
+      ...states.all('hover', 'focus')({
+        color: 'purple',
+        border: '1px solid #fff'
+      })
+    });
+
+    expect(result).toHaveProperty([topSelectorHover]);
+    expect(result).toHaveProperty([topSelectorFocus]);
+
+    const expectedStyles = expect.arrayContaining(['color: purple;', 'border: 1px solid #fff;'])
+
+    expect(result[topSelectorHover]).toEqual(
+      expectedStyles
+    );
+    expect(result[topSelectorFocus]).toEqual(
+      expectedStyles
     );
   })
   it('should shift at-rules up to the top level', () => {
