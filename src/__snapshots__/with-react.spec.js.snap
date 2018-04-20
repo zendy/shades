@@ -46,3 +46,92 @@ exports[`Shades DOM Renders without incident 1`] = `
   </Component>
 </Shades>
 `;
+
+exports[`Shades DOM renders a block matcher without incident 1`] = `
+<Shades
+  to={
+    <head>
+      <style
+        data-shades="true"
+      />
+    </head>
+  }
+>
+  <Component
+    to={
+      <head>
+        <style
+          data-shades="true"
+        />
+      </head>
+    }
+  >
+    <pure(getContext(shades.a))
+      dark={true}
+    >
+      <getContext(shades.a)
+        dark={true}
+      >
+        <shades.a
+          dark={true}
+          targetDom={
+            <head>
+              <style
+                data-shades="true"
+              />
+            </head>
+          }
+        >
+          <a
+            className="shades-3-0a5820ffa310da513618d2a4f400ba05be7c12cb "
+          >
+            Hello
+          </a>
+        </shades.a>
+      </getContext(shades.a)>
+    </pure(getContext(shades.a))>
+  </Component>
+</Shades>
+`;
+
+exports[`Shades DOM renders a block matcher without incident 2`] = `
+<Shades
+  to={
+    <head>
+      <style
+        data-shades="true"
+      />
+    </head>
+  }
+>
+  <Component
+    to={
+      <head>
+        <style
+          data-shades="true"
+        />
+      </head>
+    }
+  >
+    <pure(getContext(shades.a))>
+      <getContext(shades.a)>
+        <shades.a
+          targetDom={
+            <head>
+              <style
+                data-shades="true"
+              />
+            </head>
+          }
+        >
+          <a
+            className="shades-3-323217f643c3e3f1fe7532e72ac01bb0748c97be "
+          >
+            No Props!
+          </a>
+        </shades.a>
+      </getContext(shades.a)>
+    </pure(getContext(shades.a))>
+  </Component>
+</Shades>
+`;

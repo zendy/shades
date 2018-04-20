@@ -1,15 +1,15 @@
 language: node_js
 node_js:
-  - "9"
-
+- '9'
 script: yarn run test
-
 before_deploy: yarn run build
-
 deploy:
   provider: npm
-  email: $NPM_EMAIL
-  api_key: $NPM_TOKEN
-  skip_cleanup: true # required even for a before_deploy script
+  email: "$NPM_EMAIL"
+  api_key: "$NPM_TOKEN"
+  skip_cleanup: true
   on:
     tags: true
+notifications:
+  slack:
+    secure: AapDJafvyLngQfvphE9is1XDmgrsrWQHkYGjhcAdp81/CeSOe8KNgSYK0PW67e8zcNpDSkEEdvhZX+IeQctbjwl2y/J6IwMcMznBHHw2eZB5BoqkiJGsVsN1BOsWs9eIXbE8FxfnMnBem6WdBjllONYHuwkTerX/8ngIzVl1IqSmm5yXagBkXpxURvdnoNerrPxQAYQ/PHiOBmcxkWlyiag82TCIPITVADdrG239lK/6McHy4h29ILqe0b9eDLtlFuqb8SialKFDTP1dca4QSdlabGJnCptXc1IwnpZtEO7xe772oPxgWAna+YcHVQgUHFmfFaLXnRPS/iwiMRpUpt1UAU+Yb50JnkuAGSyoGGTVv7ML9gQnEkWY36QL/eOqs7pH2CbtEBlLUF4psHjr8RvRM3gF1m7KcyDpm9OuN29BNWIoz69Yk7faI/ozYQSynsb7QgjA30if555ejn+JwdFjiV43M66kskp00miJJq3JMMS6kCDhvrVAKlZtWstf4RISvNU0mrpDm4pJ0WFc/yzi1c1AvGbjCUh5GaqyNAceVYc5aZmJJeqnqxDj7Q2ikfENFKeI3d2T992mP7sDsIeSz/TSfM4JdDVSLmqAUVqeBTafG9AOHMfqY+fw862YFnnAv3I5FzaOETmgLk8NGgNcVRFCxLXnNXBo5ePXDsE=

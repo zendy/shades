@@ -18,12 +18,21 @@ import {
 
 import mq from './helpers/mq';
 
-export const states = (selectors) => (
-  Object.entries(selectors).reduce((result, [key, value]) => ({
+export const states = do {
+  const normalFn = (selectors) => {
+    return Object.entries(selectors).reduce((result, [key, value]) => ({
+      ...result,
+      [`:${dasherize(key)}`]: value
+    }), {})
+  }
+
+  normalFn.all = (...selectors) => (styleRules) => selectors |> reduce((result, currentSelector) => ({
     ...result,
-    [`:${dasherize(key)}`]: value
-  }), {})
-);
+    [`:${dasherize(currentSelector)}`]: styleRules
+  }), {});
+
+  normalFn;
+}
 
 export {
   mq

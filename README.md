@@ -120,10 +120,10 @@ const SimpleBox = shades.div({
   padding: '10px',
   boxShadow: '3px 3px 3px #000',
   color: '#000',
-  [':hover']: {
+  ':hover': {
     textDecoration: 'underline'
   },
-  ['::before']: {
+  '::before': {
     content: 'hello there'
   }
 });
@@ -158,7 +158,7 @@ const Button = shades.button({
       fontWeight: 'bold',
       textDecoration: 'underline',
       // You can even do media queries way down here
-      ['@media screen and (max-width: 400px)']: {
+      '@media screen and (max-width: 400px)': {
         border: '1px dotted',
         ...states({
           active: {
@@ -168,6 +168,29 @@ const Button = shades.button({
       }
     }
   })
+});
+
+// The above example is called "inline pattern matching" - where
+// you change the value of a single rule based on certain props.
+// But sometimes you need to set multiple style rules for a matching prop,
+// so Shades now supports a method for that!
+const SimpleBox = shades.div({
+  padding: '10px',
+  boxShadow: '3px 3px 3px #000',
+  color: '#000'
+}).match({
+  // By calling .match at the end of the call to an element,
+  // we append block patterns to the main styles based on which
+  // props have been passed in - like the inverse of inline patterns.
+  dark: {
+    color: 'purple',
+    border: '5px solid green'
+  },
+  light: {
+    color: 'cyan',
+    border: '10px solid magenta',
+    background: 'red'
+  }
 });
 
 export default () => (
