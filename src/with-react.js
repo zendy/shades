@@ -21,13 +21,15 @@ import {
 import css, { generateClassName } from './style-parser';
 
 import {
-  joinWith,
+  safeJoinWith,
   getLoggers
 } from './utilities';
 
 const wrapReactName = curry(
   (wrapperName, Component) => setDisplayName(wrapDisplayName(Component, wrapperName))
 );
+
+const joinWithSpace = safeJoinWith(' ');
 
 /**
  * Shades context Provider
@@ -87,7 +89,7 @@ const prettyComponentFactory = curry(
         const propsToForward = props >> pickBy((val, key) => shouldForwardProperty(tagName, key));
 
         return React.createElement(tagName, {
-          className: joinWith(fullClassName, className)(' '),
+          className: joinWithSpace(fullClassName, className),
           ...propsToForward
         }, children);
       }

@@ -111,7 +111,8 @@ describe('parseRules', () => {
     expect(result[topSelector]).toEqual(
       expect.arrayContaining([
         'font-size: 10px;',
-        'color: blue;'
+        'color: blue;',
+        'bubbles: 1px solid black;'
       ])
     );
     expect(result[mq][topSelector]).toEqual(
@@ -254,7 +255,7 @@ describe('parseRules', () => {
       ]));
     })
 
-    it('will render a block of styles for a block patterns', () => {
+    it('will render a block of styles for a block pattern', () => {
       const topSelector = '#philip-is-awesome';
 
       const result = parseRulesNoDebug(
@@ -279,23 +280,59 @@ describe('parseRules', () => {
         expect.stringContaining('color: dodgerblue')
       ]));
     });
+
+    it('renders "before" and "after" keys as pseudo-elements', () => {
+      const topSelector = '#philip-is-awesome';
+      const topSelectorBefore = `${topSelector}::before`;
+      const topSelectorAfter = `${topSelector}::after`;
+
+      const result = parseRulesNoDebug(
+        topSelector,
+        { dark: true },
+        {
+          color: 'blue',
+          before: {
+            fontWeight: 'bold',
+            color: 'purple'
+          },
+          after: {
+            color: {
+              dark: 'red',
+              light: 'green'
+            }
+          }
+        }
+      );
+
+      const expectedOutput = {
+        [topSelector]: ['color: blue;'],
+        [topSelectorBefore]: ['font-weight: bold;', 'color: purple;'],
+        [topSelectorAfter]: ['color: red;'],
+      };
+
+      expect(result).toEqual(expectedOutput);
+    });
+
   })
 })
 
 describe('parseAndStringify', () => {
   it('should not fail spectacularly', () => {
     const fakeGeneratedClass = 'lol-what-1234';
-    const fakeProps = { mode: 'something unknown', nextOne: 'hello' };
+    const fakeProps = { mode: 'something', nextOne: 'hello' };
+
     const result = parseAndStringify(fakeGeneratedClass, fakeProps, {
       fontSize: '10px',
       color: {
-        mode: (value) => value === 'dark' && 'navy',
+        mode: (value) => value + '-alright',
         kittensEverywhere: 'purple'
       },
       fontWeight: 'normal'
     });
 
-    expect(result).not.toHaveLength(0);
+    expect(result).toEqual([
+      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;font-weight: normal; }`
+    ])
   });
 
 });

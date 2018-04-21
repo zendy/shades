@@ -128,6 +128,8 @@ export const getSubstringAfter  = (start)      => getSubstring(start);
 export const startsWithAny      = (...searchStrs) => searchStrs >> map(startsWith) >> anyPass
 export const combineStrings     = (...inputs) => inputs.filter(Boolean).join('');
 
+export const safeJoinWith = (separator) => (...items) => items.filter(Boolean).join(separator);
+
 export const joinString = (first, ...items) => {
   if (first >> isArray) return first >> join('');
   return [first, ...items] >> join('');
@@ -235,16 +237,6 @@ export const dotPath = curry(
   (pathStr, target) => target >> path(pathStr >> split('.'))
 );
 
-export const match = (matchers, fallback = id) => (value) => {
-  const goodValue = isDefined(value);
-  if (!goodValue) return fallback(value);
-
-  const hasMatcher = has(value, matchers);
-  if (!hasMatcher) return fallback(value);
-
-  return matchers[value](value);
-}
-
 export const betterSet = (initialData = []) => {
   const internal = new Set(initialData);
 
@@ -315,8 +307,8 @@ const logBlue    = (...values) => tiza.bold().color('cornflowerblue') .text(valu
 const logPurple  = (...values) => tiza.bold().color('mediumorchid')   .text(values.join(' ')).reset()
 const logOrange  = (...values) => tiza.bold().color('darkorange')     .text(values.join(' ')).reset();
 
-const logError   = () => tiza.bold().underline().color('darkorange')  .text('Error: ')  .reset();
-const logWarning = () => tiza.bold().underline().color('mediumorchid').text('Warning: ').reset();
+const logError   = () => tiza.bold().color('darkorange').text('Error: ').reset();
+const logWarning = () => tiza.bold().color('mediumorchid').text('Warning: ').reset();
 const logInfo    = () => tiza.bold().text('Info: ').reset();
 
 const shadesLog = (displayName = 'Shades') => {

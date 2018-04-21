@@ -133,26 +133,10 @@ const SimpleBox = shades.div({
 // and even do pattern matching on props!
 const Button = shades.button({
   border: '1px solid',
-  borderColor: {
-    dark: colours.button.border.dark
-  },
-  backgroundColor: {
-    // Only the first match will become the value of this rule.
-    // If there is a default value defined, then that will be the value
-    // if there are no matches.
-    dark: colours.button.dark,
-    light: colours.button.light,
-    // Yep, even functions can be used in pattern matching. In this case,
-    // `value` is the value of the `mode` property, if its defined.
-    // If `mode` is not `super`, then this fn returns undefined, and
-    // this property will be skipped.
-    mode: value => value === 'super' && 'yellow',
-    default: '#ffffff'
-  },
   // Yes, all props passed to this component can be used in both patterns and in functions
   color: ({ dark }) => dark && colours.text.dark,
-  // Use the states helper to simplify pseudo selectors like hover, active and visited
-  // Alternatively, just specify a key like [':hover']
+  // Use the states helper to simplify pseudo-classes like `:hover`, `:active` and `:visited`
+  // Alternatively, just specify a key like `':hover'` (see the SimpleBox example above)
   ...states({
     hover: {
       fontWeight: 'bold',
@@ -165,16 +149,79 @@ const Button = shades.button({
             border: '2px dotted'
           }
         })
+      },
+      // There's even a media query helper library built-in!
+      // Here's an equivalent version using the mq helper:
+      [mq('screen').to(400)]: {
+        border: '1px dotted',
+        ...states({
+          active: {
+            border: '2px dotted'
+          }
+        })
       }
     }
   })
+});
+
+const PseudoIcon = shades.i({
+  // For pseudo-elements like `::before`, `::after`, `::first-letter`, etc
+  // you don't need to include the `::` prefix, because Shades knows what you
+  // mean (since thankfully there are no standard style rules that have the same names)
+  before: {
+    fontSize: '15px',
+    content: 'Hello there!'
+  },
+  // And as expected, you can do this in pseudo states too
+  ...states({
+    hover: {
+      after: {
+        fontFamily: 'Material Icons',
+        content: 'close'
+      }
+    }
+  }),
+  // Browser prefixes are also supported as string keys
+  '-webkit-text-stroke': '4px navy'
+})
+
+// Pattern matching can be done for individual style rule values,
+// like so:
+const PatternButton = shades.button({
+  padding: '10px',
+  boxShadow: '3px 3px 3px #000',
+  backgroundColor: {
+    // Only the first match will become the value of this rule, in the case of
+    // multiple matching props
+    dark: colours.button.dark,
+    light: colours.button.light,
+    // Yep, even functions can be used in pattern matching. In this case,
+    // `value` is the value of the `mode` property, if its defined.
+    // If `mode` is not `super`, then this fn returns false, and
+    // this property will be skipped.  You can return any falsy
+    // value from a function to skip the style rule.
+    mode: value => value === 'super' && 'yellow',
+    // If there is a "default" value defined, then that will be the value
+    // if there are no matching props. If you don't have a default and no
+    // props match, then the style rule will be skipped safely.
+    default: '#ffffff'
+  },
+  // Example of a pattern without defaults:
+  color: {
+    dark: colours.text.dark,
+    light: colours.text.light,
+    mode: 'green'
+    // If this component is not given any of those 3 props,
+    // then the `color` rule will be skipped, since there is no
+    // default value defined.
+  }
 });
 
 // The above example is called "inline pattern matching" - where
 // you change the value of a single rule based on certain props.
 // But sometimes you need to set multiple style rules for a matching prop,
 // so Shades now supports a method for that!
-const SimpleBox = shades.div({
+const BlockPatternBox = shades.div({
   padding: '10px',
   boxShadow: '3px 3px 3px #000',
   color: '#000'

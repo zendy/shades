@@ -48,6 +48,7 @@ import {
 
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
 const asPseudoElement = (key) => `::${dasherize(key)}`;
+const isOneOf = (...availableItems) => (givenItem) => availableItems.includes(givenItem);
 
 const log = (...args) => console.log(...args) || true;
 
@@ -56,11 +57,27 @@ const isAtRule           = startsWith('@');
 const isPseudoSelector   = startsWith(':');
 const isSelectorOrPseudo = anyPass([isSelector, isPseudoSelector]);
 const isBrowserPrefixed  = startsWith('-');
+const isPseudoElement    = isOneOf(
+  'before',
+  'after',
+  'backdrop',
+  'cue',
+  'firstLetter',
+  'firstLine',
+  'grammarError',
+  'placeholder',
+  'selection',
+  'spellingError'
+);
 
 const wrapContentString = (key) => when(equals('content', key)).onlyThen(JSON.stringify);
 
 const createStyleRule = (key, value) => {
-  const styleKey = key |> unless(isBrowserPrefixed, dasherize);
+  const styleKey = (
+    key
+    |> unless(isBrowserPrefixed, dasherize)
+  );
+
   const ruleValue = (
     value
     |> when(isArray).onlyThen(join(', '))
@@ -129,6 +146,7 @@ const combinators = (original, parentSelector, additionalCombinators) => {
       )
     ),
     withSelector: (trailingSelector) => combineStrings(parentSelector, trailingSelector),
+    pseudoElementSelector: (pseudoName) => combineStrings(parentSelector, asPseudoElement(pseudoName)),
     ...additionalCombinators
   }
 }
@@ -145,12 +163,13 @@ const parseStyleMetaData = (ruleResponder) => (parentSelector, props, rules) => 
   if (isFunction(rules)) return rules |> whenFunctionCallWith(props) |> parseNested(parentSelector);
 
   return rules |> toPairs |> reduce((result, [key, value]) => {
-    const isFunctionRule   = isFunction(value);
-    const hasObjectLiteral = isObjectLiteral(value);
-    const hasNestedRules   = hasObjectLiteral || isFunctionRule;
-    const isAtRuleBlock    = isAtRule(key) && hasNestedRules;
+    const isFunctionRule        = isFunction(value);
+    const hasObjectLiteral      = isObjectLiteral(value);
+    const hasNestedRules        = hasObjectLiteral || isFunctionRule;
 
-    const isCombiningSelector = isSelectorOrPseudo(key) && hasNestedRules;
+    const isAtRuleBlock         = isAtRule(key)           && hasNestedRules;
+    const isCombiningSelector   = isSelectorOrPseudo(key) && hasNestedRules;
+    const shouldBePseudoElement = isPseudoElement(key)    && hasNestedRules;
 
     const isPatternBlock = (
       key === '__match'
@@ -159,17 +178,14 @@ const parseStyleMetaData = (ruleResponder) => (parentSelector, props, rules) => 
 
     const isInlinePattern = (
       hasObjectLiteral
-      && !isAtRuleBlock
-      && !isCombiningSelector
-      && !isFunctionRule
-      && !isPatternBlock
     );
 
     const ruleType = {
       atRule:           isAtRuleBlock,
       combinedSelector: isCombiningSelector,
-      inlinePattern:    isInlinePattern,
-      blockPattern:     isPatternBlock
+      pseudoElement:    shouldBePseudoElement,
+      blockPattern:     isPatternBlock,
+      inlinePattern:    isInlinePattern
     } |> findKeyForValue(true) |> fallbackTo('style');
 
     const responder = (
@@ -195,9 +211,18 @@ export const parseAllStyles = parseStyleMetaData({
       value |> parseNested(withSelector(key))
     )
   ),
+  pseudoElement: ({ addRuleBlock, pseudoElementSelector, parseNested }) => (pseudoName, nestedRules) => (
+    addRuleBlock(
+      nestedRules |> parseNested(pseudoElementSelector(pseudoName))
+    )
+  ),
   inlinePattern: ({ addStyle, parseNested, props }) => (key, value) => {
-    const { default: defaultValue, ...matchers } = value;
-    const pickFromMatchers = matchers |> flip(pick);
+    const {
+      default: defaultValue,
+      ...matchers
+    } = value;
+
+    const pickFromMatchers    = matchers |> flip(pick);
     const intersectedMatchers = props |> keys |> pickFromMatchers;
 
     const computedStyle = intersectedMatchers |> iterateUntilResult(
@@ -209,13 +234,17 @@ export const parseAllStyles = parseStyleMetaData({
   blockPattern: ({ addRuleBlock, props, parseNested, parentSelector }) => (key, propsToMatch) => {
     const matchedRules = propsToMatch |> mapMerge((targetProp, outputValue) => {
       if (props |> has(targetProp)) {
-        return outputValue |> whenFunctionCallWith(props[targetProp]) |> parseNested(parentSelector);
+        return (
+          outputValue
+          |> whenFunctionCallWith(props[targetProp])
+          |> parseNested(parentSelector)
+        );
       }
     });
 
     return addRuleBlock(matchedRules);
   },
-  style: ({ addStyle }) => (key, value) => addStyle(key, value)
+  style: ({ addStyle }) => addStyle
 })
 
 
