@@ -123,6 +123,25 @@ const SimpleBox = shades.div({
   ':hover': {
     textDecoration: 'underline'
   },
+  ':focus': {
+    textDecoration: 'underline'
+  }
+  '::before': {
+    content: 'hello there'
+  }
+});
+
+
+// The above example is a basic CSS pseudo classes selector.
+// But since the selector is applying the same CSS property,
+// we can combine those pseudo classes using ...states.all
+const SimpleBox = shades.div({
+  padding: '10px',
+  boxShadow: '3px 3px 3px #000',
+  color: '#000',
+  ...states.all('hover', 'focus')({
+    textDecoration: 'underline'
+  }),
   '::before': {
     content: 'hello there'
   }
