@@ -87,7 +87,7 @@ const createStyleRule = (key, value) => {
   return `${styleKey}: ${ruleValue};`;
 }
 
-const whenFunctionCallWith = (...argsToGive) => (value) => valueAsFunction(value)(...argsToGive);
+const whenFunctionCallWith = (...argsToGive) => when(isFunction).onlyThen((fnItem) => fnItem(...argsToGive));
 
 const falseToNull = (value) => {
   if (value === false) return null;
@@ -162,7 +162,12 @@ const parseStyleMetaData = (ruleResponder) => (parentSelector, props, rules) => 
 
   if (isFunction(rules)) return rules |> whenFunctionCallWith(props) |> parseNested(parentSelector);
 
-  return rules |> toPairs |> reduce((result, [key, value]) => {
+  const mapFunctionValues = map(([key, value]) => ([
+    key,
+    value |> whenFunctionCallWith(props)
+  ]));
+
+  return rules |> toPairs |> mapFunctionValues |> reduce((result, [key, value]) => {
     const isFunctionRule        = isFunction(value);
     const hasObjectLiteral      = isObjectLiteral(value);
     const hasNestedRules        = hasObjectLiteral || isFunctionRule;
@@ -244,6 +249,7 @@ export const parseAllStyles = parseStyleMetaData({
 
     return addRuleBlock(matchedRules);
   },
+  styleSymbol: ({ parseNested, addRuleBlock,  })
   style: ({ addStyle }) => addStyle
 })
 
@@ -342,7 +348,7 @@ export const generateClassName = () => {
 
 const css = ({ className, props = {}, target, showDebug, displayName }, styleRules) => {
   const theSheet = getSheetFor(target);
-  const generatedSelector = classNameWithProps(className, props);
+    const generatedSelector = classNameWithProps(className, props);
   const generatedClassName = generatedSelector >> asClassName;
 
   const alreadyCached = shadeStore.getState('cached').has(generatedClassName);

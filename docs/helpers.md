@@ -4,7 +4,7 @@ Here's a few helpers we've included to make life a bit easier:
 
 ## Media Queries
 
-The `mq` helper is a nice DSL for writing media queries.  It simply lets you use chained methods to create media query strings, which you can then use in your shades styles.  Note, you can also write media queries without this helper if you wish, as demonstrated in the [Readme example](/README.md) of the `Button` component :)
+The `mq` helper is a nice DSL for writing media queries.  It simply lets you use chained methods to create media query strings, which you can then use in your shades styles.  Note, you can also write media queries without this helper if you wish, as demonstrated in the [Readme example](../) of the `Button` component :)
 
 Example:
 

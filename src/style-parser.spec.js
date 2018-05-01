@@ -4,16 +4,17 @@ import css, {
 } from './style-parser';
 
 import {
-  states
+  states,
+  mq
 } from './helpers';
 
 const parseRulesNoDebug = parseAllStyles
 const parseRulesWithDebug = parseAllStyles
 
+const topSelector = '#meow';
+
 describe('parseRules', () => {
   it('takes an object of rules and gives me back some more rules as strings', () => {
-    const topSelector = '#meow';
-
     const result = parseRulesNoDebug(topSelector, {}, {
       fontSize: '10px',
       color: 'blue',
@@ -23,7 +24,6 @@ describe('parseRules', () => {
     expect(result).toHaveProperty([topSelector]);
   })
   it('combines nested pseudo-elements and pseudo-selectors with the main selector', () => {
-    const topSelector = '#meow';
     const topSelectorHover = `${topSelector}:hover`;
     const topSelectorBefore = `${topSelector}::before`;
 
@@ -55,7 +55,6 @@ describe('parseRules', () => {
     );
   })
   it('supports the states.all helper', () => {
-    const topSelector = '#meow';
     const topSelectorHover = `${topSelector}:hover`;
     const topSelectorFocus = `${topSelector}:focus`;
 
@@ -80,8 +79,8 @@ describe('parseRules', () => {
       expectedStyles
     );
   })
+  // TODO: stop using this as my "test-everything-ever" bucket
   it('should shift at-rules up to the top level', () => {
-    const topSelector = '#meow';
     const topSelectorHover = `${topSelector}:hover`;
     const mq = '@media screen and (max-width: 800px)';
 
@@ -129,10 +128,75 @@ describe('parseRules', () => {
     );
   });
 
+  it('supports using functions as rules that take all given props as its argument', () => {
+    const result = parseRulesNoDebug(
+      topSelector,
+      { dark: true, darkColor: 'navy' },
+      {
+        fontWeight: {
+          dark: 600,
+          default: 200
+        },
+        color: (allProps) => ({
+          dark: allProps.darkColor,
+          default: 'blue'
+        })
+      }
+    );
+
+    expect(result[topSelector]).toEqual(
+      expect.arrayContaining([
+        'color: navy;'
+      ])
+    )
+  });
+
+  it('really seriously supports all possible permutations of functions as style rule values', () => {
+    const resultSimple = parseRulesNoDebug(
+      topSelector,
+      { dark: 'blue' },
+      {
+        [mq().portrait().from(370)]: (allProps) => ({
+          color: {
+            dark: value => value === 'blue' && 'navy',
+            light: 'green',
+            default: 'orange'
+          }
+        })
+      }
+    );
+
+    expect(resultSimple[mq().portrait().from(370)][topSelector]).toEqual(
+      expect.arrayContaining([
+        'color: navy;'
+      ])
+    );
+
+    const resultComplex = parseRulesNoDebug(
+      topSelector,
+      { darkColour: 'red', lightColour: 'yellow', dark: 'green', light: true },
+      {
+        [mq().portrait().from(370)]: (allProps) => ({
+          color: (sameAsAllProps) => ({
+            dark: value => value === 'blue' &&  allProps.darkColour,
+            light: sameAsAllProps.lightColour,
+            default: 'orange'
+          })
+        })
+      }
+    );
+
+    expect(resultComplex[mq().portrait().from(370)][topSelector]).toEqual(
+      expect.arrayContaining([
+        'color: yellow;'
+      ])
+    )
+  });
+
+
+
   describe('Pattern matching', () => {
     it('supports pattern-matching rules for props', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { dark: true }, {
         fontSize: '10px',
         color: {
@@ -147,8 +211,6 @@ describe('parseRules', () => {
     })
 
     it('supports a default value when no pattern match found', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { }, {
         fontSize: '10px',
         color: {
@@ -163,8 +225,6 @@ describe('parseRules', () => {
     })
 
     it('supports a pattern match rule as a function that takes the value of the named prop', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { mode: 'dark' }, {
         fontSize: '10px',
         color: {
@@ -180,8 +240,6 @@ describe('parseRules', () => {
     })
 
     it('tries the next valid match when the current matcher returns null, undefined, or false', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { mode: 'supersayan', nextOne: 'hello' }, {
         fontSize: '10px',
         color: {
@@ -197,8 +255,6 @@ describe('parseRules', () => {
     })
 
     it('uses the default value if the matched function returns null, undefined, or false', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { mode: 'supersayan' }, {
         fontSize: '10px',
         color: {
@@ -213,8 +269,6 @@ describe('parseRules', () => {
     })
 
     it('uses only the first match found, even when there are multiple valid matches', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { mode: 'dark', nextOne: 'hello' }, {
         fontSize: '10px',
         color: {
@@ -238,8 +292,6 @@ describe('parseRules', () => {
     })
 
     it('skips the rule entirely if there is no match and no default value', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { mode: 'something unknown', nextOne: 'hello' }, {
         fontSize: '10px',
         color: {
@@ -256,8 +308,6 @@ describe('parseRules', () => {
     })
 
     it('will render a block of styles for a block pattern', () => {
-      const topSelector = '#philip-is-awesome';
-
       const result = parseRulesNoDebug(
         topSelector,
         { mode: 'hi there', nextOne: 'dodgerblue' },
@@ -282,7 +332,6 @@ describe('parseRules', () => {
     });
 
     it('renders "before" and "after" keys as pseudo-elements', () => {
-      const topSelector = '#philip-is-awesome';
       const topSelectorBefore = `${topSelector}::before`;
       const topSelectorAfter = `${topSelector}::after`;
 
