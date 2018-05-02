@@ -205,6 +205,7 @@ const parseStyleMetaData = (ruleResponder) => (parentSelector, props, rules) => 
   }, { [parentSelector]: [] });
 }
 
+// parseAllStyles :: String -> Record props -> Record rules -> Map String Array
 export const parseAllStyles = parseStyleMetaData({
   atRule: ({ addRuleBlock, parseNested, parentSelector }) => (key, value) => (
     addRuleBlock({
@@ -249,7 +250,9 @@ export const parseAllStyles = parseStyleMetaData({
 
     return addRuleBlock(matchedRules);
   },
-  styleSymbol: ({ parseNested, addRuleBlock,  })
+  styleSymbol: ({ parseNested, addRuleBlock }) => (symbolKey, styleBlock) => {
+
+  },
   style: ({ addStyle }) => addStyle
 })
 

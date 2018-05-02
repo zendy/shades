@@ -90,19 +90,19 @@ const pseudoClassNames = [
 
 const KINDS = {
   COMBINATOR_AND: 'combinator.and',
-  COMBINATOR_OR: 'combinator.or',
-  ATTRIBUTE: 'attribute',
-  PSEUDO_CLASS: 'pseudo-class',
+  COMBINATOR_OR:  'combinator.or',
+  ATTRIBUTE:      'attribute',
+  PSEUDO_CLASS:   'pseudo-class',
   PSEUDO_ELEMENT: 'pseudo-element',
-  PROPERTY: 'property'
+  PROPERTY:       'property'
 };
 
-const kindKey = Symbol('Selector Kind');
-const valueKey = Symbol('Selector value');
+const kindKey       = Symbol('Selector Kind');
+const valueKey      = Symbol('Selector value');
 const stringKeyProp = Symbol('The string key thing');
 const symbolKeyProp = Symbol('The symbol of the key');
 
-const symbolProp = (target) => (original) => original?.[target] ?? original;
+const symbolProp    = (target) => (original) => original?.[target] ?? original;
 
 const keyFromSymbol = (...args) => Symbol.keyFor(...args);
 const symbolFromKey = (...args) => Symbol.for(...args);
