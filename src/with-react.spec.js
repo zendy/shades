@@ -90,32 +90,4 @@ describe('Shades DOM', () => {
     expect(anchorItem).toHaveProp('aria-label', 'hello');
     expect(anchorItem).not.toHaveProp('superDark');
   });
-  it('supports label dom properties', () => {
-    const Labely = shades.label({
-      backgroundColor: {
-        dark: 'blue',
-        light: 'green',
-        default: 'pink'
-      },
-      fontWeight: {
-        dark: 600,
-        light: 200
-      },
-      color: 'black'
-    });
-
-    const subject = mountShades(
-      <Labely htmlFor="some-other-selector" superDark="yeah" data-testing="just a test" aria-label="hello">Hello</Labely>
-    );
-
-    console.log(subject.debug());
-
-    const labelItem = subject.find('label');
-
-    expect(labelItem).toHaveProp('htmlFor', 'some-other-selector');
-    expect(labelItem).toHaveProp('data-testing', 'just a test');
-    expect(labelItem).toHaveProp('aria-label', 'hello');
-    expect(labelItem).not.toHaveProp('superDark');
-  });
-
 });

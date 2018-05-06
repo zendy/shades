@@ -7,29 +7,29 @@ const expectSymbol = (original) => expect(
 
 describe('style', () => {
   it('generates pseudo-classes from property getters', () => {
-    expectSymbol(
+    expectString(
       style.hover
     ).toEqual(':hover');
-    expectSymbol(
+    expectString(
       style.active
     ).toEqual(':active');
-    expectSymbol(
+    expectString(
       style.focus
     ).toEqual(':focus');
-    expectSymbol(
+    expectString(
       style.visited
     ).toEqual(':visited');
   });
   it('supports pseudo-class functions as methods', () => {
-    expectSymbol(
+    expectString(
       style.nthChild('even')
     ).toEqual(':nth-child(even)');
-    expectSymbol(
+    expectString(
       style.nthOfType('2n+1')
     ).toEqual(':nth-of-type(2n+1)');
   });
   it('supports the boolean not operator as a method', () => {
-    expectSymbol(
+    expectString(
       style.not(style.hover)
     ).toEqual(':not(:hover)');
   });
@@ -55,27 +55,28 @@ describe('style', () => {
   describe('Attributes and props', () => {
     describe('Attributes', () => {
       it('supports HTML attribute selectors', () => {
-        expectSymbol(
+        console.log('>>>>>>> style.attr.title', style.attr);
+        expectString(
           style.attr.title
         ).toEqual('[title]');
       });
 
       it('supports attribute selectors that specify a matching value', () => {
-        expectSymbol(
+        expectString(
           style.attr.href('https://example.org')
         ).toEqual('[href="https://example.org"]');
       });
 
       it('supports partial value matching on attribute values', () => {
-        expectSymbol(
+        expectString(
           style.attr.href.contains('example')
         ).toEqual('[href*="example"]');
 
-        expectSymbol(
+        expectString(
           style.attr.href.startsWith('#')
         ).toEqual('[href^="#"]');
 
-        expectSymbol(
+        expectString(
           style.attr.href.endsWith('.org')
         ).toEqual('[href$=".org"]');
 
@@ -93,52 +94,34 @@ describe('style', () => {
       });
 
       it('supports data attribute selectors with the .data method', () => {
-        expectSymbol(
-          style.attr.data.tooltip
+        expectString(
+          style.data.tooltip
         ).toEqual('[data-tooltip]');
       });
 
       it('supports partial value matching on data attributes', () => {
         expectSymbol(
-          style.attr.data.url.endsWithAny('.com', '.net', '.org')
+          style.data.url.endsWithAny('.com', '.net', '.org')
         ).toEqual('[data-url$=".com"] || [data-url$=".net"] || [data-url$=".org"]');
 
         expectSymbol(
-          style.attr.data.validation.anyOf('date', 'email', 'phone')
+          style.data.validation.anyOf('date', 'email', 'phone')
         ).toEqual('[data-validation="date"] || [data-validation="email"] || [data-validation="phone"]');
       });
     });
 
     describe('Properties', () => {
       it('supports special syntax for matching props (similar to attributes)', () => {
-        expectSymbol(
-          style.prop('specialItem')
+        expectString(
+          style.prop.specialItem
         ).toEqual('!!specialItem');
       });
-    });
-    describe('Parser helpers', () => {
-      it('helps the parser to generate the more complicated selectors (e.g attribute combinators)', () => {
-        const topSelector = '#hi-josh'; // :)
-        const styleCombinatorOutput = style.or(
-          style.hover,
-          style.active,
-          style.and(style.attr.href, style.attr.title)
-        );
-
-        const result = parseStyleSymbol(
-          topSelector,
-          styleCombinatorOutput
-        );
-
-        expect(result).toEqual(
-          expect.arrayContaining([
-            `${topSelector}:hover`,
-            `${topSelector}:active`,
-            `${topSelector}[href][title]`,
-          ])
-        );
+      it('allows multiple props to be matched at one time', () => {
+        expectSymbol(
+          style.props.all(style.prop.specialItem, style.prop.thingamabob)
+        ).toEqual('!!specialItem && !!thingamabob')
       });
 
-    })
+    });
   });
 });

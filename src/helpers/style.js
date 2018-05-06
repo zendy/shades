@@ -1,7 +1,10 @@
 import {
   compose,
   map,
-  join
+  concat,
+  join,
+  curry,
+  prop
 } from 'ramda';
 
 import {
@@ -9,12 +12,15 @@ import {
   isString,
   isSymbol,
   isNumber,
+  isDefined,
   when,
   betterSet,
   includes,
   stateful,
   proxyFunction,
-  proxyPropertyGetter
+  proxyPropertyGetter,
+  proxyGetterFunction,
+  proxyRecord
 } from '../utilities';
 
 const interceptMethodCall = (methodName, interceptor) => (original) => (
@@ -88,114 +94,137 @@ const pseudoClassNames = [
   'visited'
 ];
 
-const KINDS = {
+export const KINDS = {
   COMBINATOR_AND: 'combinator.and',
   COMBINATOR_OR:  'combinator.or',
-  ATTRIBUTE:      'attribute',
-  PSEUDO_CLASS:   'pseudo-class',
-  PSEUDO_ELEMENT: 'pseudo-element',
-  PROPERTY:       'property'
+  PROPERTY_AND:   'property.and',
+  PROPERTY_OR:    'property.or'
 };
 
-const kindKey       = Symbol('Selector Kind');
-const valueKey      = Symbol('Selector value');
-const stringKeyProp = Symbol('The string key thing');
-const symbolKeyProp = Symbol('The symbol of the key');
+const COMBINATOR_INSERTS = {
+  [KINDS.COMBINATOR_AND]: '&&',
+  [KINDS.PROPERTY_AND]:   '&&',
+  [KINDS.COMBINATOR_OR]:  '||',
+  [KINDS.PROPERTY_OR]:    '||'
+}
+
+const kindKey            = Symbol('Selector Kind');
+const valueKey           = Symbol('Selector value');
+const stringKeyProp      = Symbol('The string key thing');
+const symbolKeyProp      = Symbol('The symbol of the key');
+const computeSelectorSym = Symbol('Compute Selector');
+const isDescriptorSym    = Symbol('Compute Selector');
 
 const symbolProp    = (target) => (original) => original?.[target] ?? original;
-
 const keyFromSymbol = (...args) => Symbol.keyFor(...args);
 const symbolFromKey = (...args) => Symbol.for(...args);
-
-const joinSymbols = (separator) => compose(
+const mapToProp     = (propName) => map(symbolProp(propName));
+const joinSymbols   = (separator) => compose(
   symbolFromKey,
   join(separator),
   map(when(isSymbol).then(keyFromSymbol))
 );
 
-const createDescriptor = (kind, stringKey) => (value) => {
-  const keyOrValue = stringKey ?? value |> when(isString).otherwise(JSON.stringify);
-  const symbolKey  = symbolFromKey(keyOrValue);
+const asPseudoClass      = (name) => `:${name |> dasherize}`;
+const asPseudoElement    = (name) => `::${name |> dasherize}`;
+const asPropertySelector = (givenName) => `!!${givenName}`;
+const asPseudoFunction   = curry((name, value) => (
+  `:${name |> dasherize}(${value |> dasherize})`
+));
 
-  const selfDescriptor = {
-    [kindKey]: kind,
-    [valueKey]: value,
-    [stringKeyProp]: keyOrValue,
-    [symbolKeyProp]: symbolKey,
-    // this toString doesnt actually return a string
-    // it instead returns a symbol whose key is a string
-    toString: () => symbolKey,
-    toDescriptor: () => selfDescriptor
-  };
-
-  return selfDescriptor;
-};
+const descriptorToString = when(isString).otherwise(prop('originalKey'))
 
 const styleStore = stateful(
   new Map(),
   {
     addItem: (store, itemKey, itemValue) => store.set(itemKey, itemValue)
   }
-)
+);
+
+export const getDescriptor = (key) => styleStore.getState(key);
 
 const storeDescriptor = (descriptorItem) => {
-  const symbolKey = descriptorItem[symbolKeyProp];
+  const symbolKey = descriptorItem.symbolKey;
 
-  styleStore.lift(({ addItem }) => addItem(symbolKey, descriptorItem));
+  styleStore.lift(
+    ({ addItem }) => addItem(symbolKey, descriptorItem)
+  );
 
   return descriptorItem;
 };
 
-const getDescriptor = (key) => {
-  return styleStore.getState(key);
-}
+const createDescriptor = (kind, config = {}) => (value) => {
+  const keyOrValue = config?.stringKey ?? value |> when(isString).otherwise(JSON.stringify);
+  const symbolKey  = symbolFromKey(keyOrValue);
 
-const mapToProp = (propName) => map(symbolProp(propName));
-
-const COMBINATOR_INSERTS = {
-  [KINDS.COMBINATOR_AND]: '&&',
-  [KINDS.COMBINATOR_OR]: '||'
-}
-
-const createCombinator = (kind) => (...data) => (
-  data |> createDescriptor(
+  const selfDescriptor = {
+    [isDescriptorSym]:    true,
     kind,
-    data |> mapToProp(stringKeyProp) |> join(` ${COMBINATOR_INSERTS[kind]} `)
-  ) |> storeDescriptor
-)
+    value,
+    symbolKey,
+    originalKey:          keyOrValue,
+    // this toString doesnt actually return a string
+    // it instead returns a symbol whose key is a string
+    toString:        () => symbolKey
+  };
+
+  return selfDescriptor;
+};
+
+const createAndStoreDescriptor = (kind, config) => compose(
+  storeDescriptor,
+  createDescriptor(kind, config)
+);
+
+const createCombinator = (kind) => (...data) => {
+  const stringKey = (
+    data
+    |> map(when(isString).otherwise(prop('originalKey')))
+    |> join(` ${COMBINATOR_INSERTS[kind]} `)
+  );
+
+  return data |> createAndStoreDescriptor(
+    kind,
+    { stringKey }
+  );
+}
 
 const pseudoCombinators = {
-  and: createCombinator(KINDS.COMBINATOR_AND),
-  or:  createCombinator(KINDS.COMBINATOR_OR)
+  and: createCombinator(
+    KINDS.COMBINATOR_AND
+  ),
+  or:  createCombinator(
+    KINDS.COMBINATOR_OR
+  )
 };
+
+const extendedString = (extraMethods) => (originalString) => proxyRecord(extraMethods)({
+  toString: () => originalString
+});
 
 const withAttribute = (givenName) => {
   const quoteString = JSON.stringify;
-  const wrapWithDescriptor = (originalFn) => (...args) => (
-    originalFn(...args) |> createDescriptor(KINDS.ATTRIBUTE)
-  )
 
-  const attrWithValue  = wrapWithDescriptor((givenValue) => `[${givenName}=${givenValue  |> quoteString}]`);
-  const attrStartsWith = wrapWithDescriptor((givenValue) => `[${givenName}^=${givenValue |> quoteString}]`);
-  const attrEndsWith   = wrapWithDescriptor((givenValue) => `[${givenName}$=${givenValue |> quoteString}]`);
-  const attrContains   = wrapWithDescriptor((givenValue) => `[${givenName}*=${givenValue |> quoteString}]`);
+  const attrWithValue  = (givenValue) => `[${givenName}=${givenValue  |> quoteString}]`;
+  const attrStartsWith = (givenValue) => `[${givenName}^=${givenValue |> quoteString}]`;
+  const attrEndsWith   = (givenValue) => `[${givenName}$=${givenValue |> quoteString}]`;
+  const attrContains   = (givenValue) => `[${givenName}*=${givenValue |> quoteString}]`;
 
   const anyCombinator = (mapperFn) => (...givenValues) => pseudoCombinators.or(
     ...givenValues.map(mapperFn)
   );
 
-  const getPlainValue = () => `[${givenName}]`;
+  const plainValue = `[${givenName}]`;
 
   const outerMethods = {
-    toString:      getPlainValue,
-    toDescriptor:  compose(createDescriptor(KINDS.ATTRIBUTE), getPlainValue),
     anyOf:         anyCombinator(attrWithValue),
     contains:      attrContains,
     containsAny:   anyCombinator(attrContains),
     startsWith:    attrStartsWith,
     startsWithAny: anyCombinator(attrStartsWith),
     endsWith:      attrEndsWith,
-    endsWithAny:   anyCombinator(attrEndsWith)
+    endsWithAny:   anyCombinator(attrEndsWith),
+    toString: () => plainValue
   };
 
   return proxyFunction(
@@ -204,124 +233,57 @@ const withAttribute = (givenName) => {
   )
 }
 
-const allowDataChain = (originalFn) => (givenName) => {
-  if (givenName === 'data') return proxyPropertyGetter(
-    (dataAttrName) => originalFn(`data-${dataAttrName}`)
-  );
-
-  return originalFn(givenName);
-}
-
-const descriptorToString = when(isString).otherwise(symbolProp(stringKeyProp))
-
-const createPropDescriptor = (givenName) => `!!${givenName}` |> createDescriptor(KINDS.PROPERTY);
-
 const pseudoClassHandler = (specialChains) => (targetName) => {
   if (pseudoClassNames.includes(targetName)) {
-    return `:${targetName |> dasherize}` |> createDescriptor(KINDS.PSEUDO_CLASS);
+    return targetName |> asPseudoClass;
   }
 
   if (pseudoFunctionNames.includes(targetName)) {
     return compose(
-      (value) => `:${targetName |> dasherize}(${value})` |> createDescriptor(KINDS.PSEUDO_CLASS),
+      asPseudoFunction(targetName),
       descriptorToString
     );
   }
-
   return specialChains?.[targetName];
-};
+}
+
+const logMe = (msg) => (first, ...rest) => console.log(msg, [first, ...rest]) || first;
 
 const style = do {
   proxyPropertyGetter(
     pseudoClassHandler({
       ...pseudoCombinators,
-      attr: compose(
-        withAttribute |> allowDataChain,
-        dasherize
-      ) |> proxyPropertyGetter,
-      prop: createPropDescriptor
+      element: proxyPropertyGetter(
+        when(isString).then(asPseudoElement)
+      ),
+      pseudo: (name, value) => {
+        if (isDefined(value)) return asPseudoFunction(name, value);
+        return asPseudoClass(name);
+      },
+      data: proxyPropertyGetter(
+        when(isString).then(compose(
+          withAttribute,
+          (value) => `data-${value}`,
+          dasherize
+        ))
+      ),
+      attr: proxyPropertyGetter(
+        when(isString).then(compose(
+          withAttribute,
+          dasherize
+        ))
+      ),
+      prop: proxyPropertyGetter(
+        when(isString).then(asPropertySelector)
+      ),
+      props: ({
+        any: createCombinator(KINDS.PROPERTY_OR),
+        all: createCombinator(KINDS.PROPERTY_AND)
+      })
     })
   )
 }
 
+// style.props.all(style.prop.specialThing, style.prop.fantastic)
+
 export default style;
-
-const parsingRules = () => {
-
-}
-
-export const isAndCombinator = compose(
-  includes(' && '),
-  keyFromSymbol
-)
-
-export const parseStyleSymbol = (topSelector, combinatorSymbol) => {
-
-}
-
-// export cn
-
-//
-// shades.button({
-//   background: 'blue',
-//   [select.before]: {
-//     color: 'purple'
-//   },
-//   [style.nthLastChild(1)]: {
-//     color: 'green'
-//   },
-//   [style.not(style.hover)]: {
-//     color: 'blue'
-//   },
-//   [style.hover.and.prop.primary]
-// });
-//
-// shades.button((allProps) => ({
-//   [style.prop.primary]: {
-//     color: 'blue',
-//     backgroundColor: 'blue'
-//   },
-//   [style.prop.secondary]: {
-//     color: 'purple'
-//   },
-//   // for data attributes, equivalent to [data-tooltip]
-//   [style.data.tooltip]: {
-//
-//   },
-//   [style.or(
-//     style.hover, style.active
-//   )]: {
-//
-//   },
-//   [style.prop.userType('member')]: (memberType) => {
-//     background: 'green'
-//   },
-//   '::after'
-//   [select.after]: {
-//     [style.prop.icon(
-//       style.oneOf('open', 'close', 'disabled')
-//     )]: (value) => ({
-//       content: value
-//     })
-//   },
-//   [style.prop('specialItem')]: when(startsWith('secret')).onlyThen({
-//
-//   })
-//   [select.after]: {
-//     [style.prop.icon.oneOf('open', 'close', 'disabled')]: (value) => ({
-//       content: value
-//     })
-//   }
-// }))
-//
-// //
-// // [state.prop.superSayan]: {
-// //
-// // },
-// // [state.hover.active]
-// // [style.all(style.hover, style.active)]
-// // [state.hover.and.active]: {
-// //   background: 'red'
-// // },
-// // [state.not.active],
-// // [state.not.prop('superSayan')]

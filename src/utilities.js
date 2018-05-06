@@ -194,18 +194,35 @@ export const valueAsFunction = value => {
 export const proxyPropertyGetter = (genericHandler) => (
   new Proxy({}, {
     get: (target, name) => (
-      genericHandler(name) ?? Reflect.get(target, name)
+      Reflect.get(target, name) ?? genericHandler(name)
     )
   })
 );
 
+export const proxyRecord = (handlers) => (originalRecord) => (
+  new Proxy(originalRecord, {
+    get: (target, name) => (
+      Reflect.get(target, name) ?? handlers[name]
+    )
+  })
+)
+
 export const proxyFunction = (callHandler, chainHandlers) => {
   const outerProxy = new Proxy(callHandler, {
-    get: (target, name) => chainHandlers?.[name] ?? Reflect.get(target, name)
+    get: (target, name) =>  chainHandlers?.[name] ?? Reflect.get(target, name)
   });
 
   return outerProxy;
 };
+
+export const proxyGetterFunction = (genericHandler) => (
+  new Proxy(genericHandler, {
+    get: (target, name) => {
+      const output = genericHandler(name) ?? Reflect.get(target, name)
+      return output
+    }
+  })
+)
 
 export const proxyPassthroughFunction = (beforePassthrough) => (originalFn) => new Proxy(originalFn, {
   get: (target, name) => {
@@ -246,8 +263,8 @@ export const when = (...predicates) => {
   return ({
     // If predicate doesnt retun a truthy value, then just return the first
     // argument given to the whole expression
-    onlyThen: (...truthyHandlers) => evaluateWith(truthyHandlers),
-    then: (...truthyHandlers) => proxyFunction(evaluateWith(truthyHandlers), {
+    onlyThen: (...truthyHandlers) => evaluateWith(truthyHandlers)(),
+    then: (...truthyHandlers) => proxyFunction(evaluateWith(truthyHandlers)(), {
       // If the predicate returns truthy, call handleTruthy with the
       // last set of arguments, otherwise call handleFalsy
       otherwise: (...falsyHandlers) => evaluateWith(truthyHandlers)(falsyHandlers)

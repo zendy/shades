@@ -8,6 +8,8 @@ import {
   mq
 } from './helpers';
 
+import style from './helpers/style';
+
 const parseRulesNoDebug = parseAllStyles
 const parseRulesWithDebug = parseAllStyles
 
@@ -44,38 +46,39 @@ describe('parseRules', () => {
     expect(result).toHaveProperty([topSelectorHover]);
     expect(result).toHaveProperty([topSelectorBefore]);
 
-    expect(result[topSelector]).toEqual(
-      expect.arrayContaining(['font-size: 10px;', 'color: blue;'])
-    );
-    expect(result[topSelectorHover]).toEqual(
-      expect.arrayContaining(['color: red;'])
-    );
-    expect(result[topSelectorBefore]).toEqual(
-      expect.arrayContaining(['content: "hi there";', 'border: 1px solid #000;'])
-    );
+    expect(result[topSelector]).toMatchObject({
+      'font-size': '10px',
+      'color': 'blue',
+      'font-weight': 'normal'
+    });
+    expect(result[topSelectorHover]).toMatchObject({
+      'color': 'red'
+    });
+    expect(result[topSelectorBefore]).toMatchObject({
+      'content': '"hi there"',
+      'border': '1px solid #000'
+    });
   })
-  it('supports the states.all helper', () => {
-    const topSelectorHover = `${topSelector}:hover`;
-    const topSelectorFocus = `${topSelector}:focus`;
+  it('supports the style combinators', () => {
+    const topSelectorHoverFocus = `${topSelector}:hover, ${topSelector}:focus`;
 
     const result = parseRulesNoDebug(topSelector, {}, {
       fontSize: '10px',
       color: 'blue',
-      ...states.all('hover', 'focus')({
+      [style.or(style.hover, style.focus)]: {
         color: 'purple',
         border: '1px solid #fff'
-      })
+      }
     });
 
-    expect(result).toHaveProperty([topSelectorHover]);
-    expect(result).toHaveProperty([topSelectorFocus]);
+    expect(result).toHaveProperty([topSelectorHoverFocus]);
 
-    const expectedStyles = expect.arrayContaining(['color: purple;', 'border: 1px solid #fff;'])
+    const expectedStyles = {
+      'color': 'purple',
+      'border': '1px solid #fff'
+    };
 
-    expect(result[topSelectorHover]).toEqual(
-      expectedStyles
-    );
-    expect(result[topSelectorFocus]).toEqual(
+    expect(result[topSelectorHoverFocus]).toMatchObject(
       expectedStyles
     );
   })
@@ -107,25 +110,20 @@ describe('parseRules', () => {
     expect(result).toHaveProperty([mq, topSelector]);
     expect(result).toHaveProperty([mq, topSelectorHover]);
 
-    expect(result[topSelector]).toEqual(
-      expect.arrayContaining([
-        'font-size: 10px;',
-        'color: blue;',
-        'bubbles: 1px solid black;'
-      ])
-    );
-    expect(result[mq][topSelector]).toEqual(
-      expect.arrayContaining([
-        'font-size: 90px;',
-        'background: green;'
-      ])
-    );
-    expect(result[mq][topSelectorHover]).toEqual(
-      expect.arrayContaining([
-        'font-weight: 800;',
-        'border: 1px solid red;'
-      ])
-    );
+    expect(result[topSelector]).toMatchObject({
+      'font-size': '10px',
+      'color': 'blue',
+      'bubbles': '1px solid black'
+    });
+
+    expect(result[mq][topSelector]).toMatchObject({
+      'font-size': '90px',
+      'background': 'green'
+    });
+    expect(result[mq][topSelectorHover]).toMatchObject({
+      'font-weight': '800',
+      'border': '1px solid red'
+    });
   });
 
   it('supports using functions as rules that take all given props as its argument', () => {
@@ -133,22 +131,15 @@ describe('parseRules', () => {
       topSelector,
       { dark: true, darkColor: 'navy' },
       {
-        fontWeight: {
-          dark: 600,
-          default: 200
-        },
-        color: (allProps) => ({
-          dark: allProps.darkColor,
-          default: 'blue'
-        })
+        fontWeight: 'normal',
+        color: (allProps) => allProps.darkColor ?? 'fallback'
       }
     );
 
-    expect(result[topSelector]).toEqual(
-      expect.arrayContaining([
-        'color: navy;'
-      ])
-    )
+    expect(result[topSelector]).toMatchObject({
+      'font-weight': 'normal',
+      'color': 'navy'
+    })
   });
 
   it('really seriously supports all possible permutations of functions as style rule values', () => {
@@ -157,40 +148,16 @@ describe('parseRules', () => {
       { dark: 'blue' },
       {
         [mq().portrait().from(370)]: (allProps) => ({
-          color: {
-            dark: value => value === 'blue' && 'navy',
-            light: 'green',
-            default: 'orange'
-          }
-        })
-      }
-    );
-
-    expect(resultSimple[mq().portrait().from(370)][topSelector]).toEqual(
-      expect.arrayContaining([
-        'color: navy;'
-      ])
-    );
-
-    const resultComplex = parseRulesNoDebug(
-      topSelector,
-      { darkColour: 'red', lightColour: 'yellow', dark: 'green', light: true },
-      {
-        [mq().portrait().from(370)]: (allProps) => ({
-          color: (sameAsAllProps) => ({
-            dark: value => value === 'blue' &&  allProps.darkColour,
-            light: sameAsAllProps.lightColour,
-            default: 'orange'
+          [style.prop.dark]: value => ({
+            color: ({ dark }) => value === dark && allProps.dark === value && 'navy'
           })
         })
       }
     );
 
-    expect(resultComplex[mq().portrait().from(370)][topSelector]).toEqual(
-      expect.arrayContaining([
-        'color: yellow;'
-      ])
-    )
+    expect(resultSimple[mq().portrait().from(370)][topSelector]).toMatchObject({
+      'color': 'navy'
+    });
   });
 
 
@@ -199,112 +166,88 @@ describe('parseRules', () => {
     it('supports pattern-matching rules for props', () => {
       const result = parseRulesNoDebug(topSelector, { dark: true }, {
         fontSize: '10px',
-        color: {
-          dark: 'navy',
-          default: 'green'
+        color: 'green',
+        [style.prop.dark]: {
+          color: 'navy'
         },
         fontWeight: 'normal'
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: navy;');
+      expect(result[topSelector]).toMatchObject({
+        'color': 'navy'
+      })
     })
 
     it('supports a default value when no pattern match found', () => {
       const result = parseRulesNoDebug(topSelector, { }, {
         fontSize: '10px',
-        color: {
-          dark: 'navy',
-          default: 'green'
+        color: 'green',
+        [style.prop.dark]: {
+          color: 'navy'
         },
         fontWeight: 'normal'
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: green;');
+      expect(result[topSelector]).toMatchObject({
+        'color': 'green'
+      })
     })
 
     it('supports a pattern match rule as a function that takes the value of the named prop', () => {
       const result = parseRulesNoDebug(topSelector, { mode: 'dark' }, {
         fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          default: 'green'
-        },
+        color: 'blue',
+        [style.prop.mode]: value => ({
+          color: `green-${value}`,
+        }),
         fontWeight: 'normal'
       });
 
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: navy;');
-    })
-
-    it('tries the next valid match when the current matcher returns null, undefined, or false', () => {
-      const result = parseRulesNoDebug(topSelector, { mode: 'supersayan', nextOne: 'hello' }, {
-        fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          nextOne: 'purple',
-          default: 'green'
-        },
-        fontWeight: 'normal'
+      expect(result[topSelector]).toMatchObject({
+        'font-size': '10px',
+        'color': 'green-dark',
+        'font-weight': 'normal'
       });
-
-      expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: purple;');
     })
 
     it('uses the default value if the matched function returns null, undefined, or false', () => {
       const result = parseRulesNoDebug(topSelector, { mode: 'supersayan' }, {
         fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          default: 'green'
-        },
+        color: 'green',
+        [style.prop.mode]: (value) => ({
+          color: value === 'dark' && 'navy',
+          padding: '100px'
+        }),
         fontWeight: 'normal'
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: green;');
-    })
-
-    it('uses only the first match found, even when there are multiple valid matches', () => {
-      const result = parseRulesNoDebug(topSelector, { mode: 'dark', nextOne: 'hello' }, {
-        fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          nextOne: 'purple',
-          default: 'green'
-        },
-        fontWeight: {
-          mode: 'bold'
-        },
-        __match: {
-          mode: {
-            color: 'blue',
-            fontWeight: 'bold'
-          }
-        }
+      expect(result[topSelector]).toMatchObject({
+        'font-size': '10px',
+        'color': 'green',
+        'padding': '100px',
+        'font-weight': 'normal'
       });
-
-      expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: navy;');
     })
 
-    it('skips the rule entirely if there is no match and no default value', () => {
+    it('skips the rule entirely if there is no match', () => {
       const result = parseRulesNoDebug(topSelector, { mode: 'something unknown', nextOne: 'hello' }, {
         fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          kittensEverywhere: 'purple'
+        [style.prop.mode]: (value) => ({
+          color: value === 'dark' && 'navy'
+        }),
+        [style.prop.kittensEverywhere]: {
+          color: 'purple'
         },
         fontWeight: 'normal'
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).not.toEqual(expect.arrayContaining([
-        expect.stringContaining('color:')
-      ]));
+      expect(result[topSelector]).not.toHaveProperty(['color']);
     })
 
     it('will render a block of styles for a block pattern', () => {
@@ -312,26 +255,25 @@ describe('parseRules', () => {
         topSelector,
         { mode: 'hi there', nextOne: 'dodgerblue' },
         {
-          __match: {
-            mode: {
-              fontWeight: 'bold',
-              color: 'purple'
-            },
-            nextOne: value => ({
-              color: value,
-              border: '1px solid #ccc'
-            })
-          }
+          [style.prop.mode]: {
+            fontWeight: 'bold',
+            color: 'purple'
+          },
+          [style.prop.nextOne]: (value) => ({
+            color: value,
+            border: '1px solid #ccc'
+          })
         }
       );
 
-      expect(result[topSelector]).toEqual(expect.arrayContaining([
-        expect.stringContaining('font-weight: bold'),
-        expect.stringContaining('color: dodgerblue')
-      ]));
+      expect(result[topSelector]).toMatchObject({
+        'font-weight': 'bold',
+        'color': 'dodgerblue',
+        'border': '1px solid #ccc'
+      });
     });
 
-    it('renders "before" and "after" keys as pseudo-elements', () => {
+    it('renders style.element helpers as pseudo-elements', () => {
       const topSelectorBefore = `${topSelector}::before`;
       const topSelectorAfter = `${topSelector}::after`;
 
@@ -340,26 +282,70 @@ describe('parseRules', () => {
         { dark: true },
         {
           color: 'blue',
-          before: {
+          [style.element.before]: {
             fontWeight: 'bold',
             color: 'purple'
           },
-          after: {
-            color: {
-              dark: 'red',
-              light: 'green'
+          [style.element.after]: {
+            [style.prop.dark]: {
+              color: 'red'
+            },
+            [style.prop.light]: {
+              color: 'green'
             }
           }
         }
       );
 
       const expectedOutput = {
-        [topSelector]: ['color: blue;'],
-        [topSelectorBefore]: ['font-weight: bold;', 'color: purple;'],
-        [topSelectorAfter]: ['color: red;'],
+        [topSelector]: { 'color': 'blue' },
+        [topSelectorBefore]: { 'font-weight': 'bold', 'color': 'purple' },
+        [topSelectorAfter]: { 'color': 'red' },
       };
 
-      expect(result).toEqual(expectedOutput);
+      expect(result).toMatchObject(expectedOutput);
+    });
+
+    it('supports pseudo-functions from the style helper', () => {
+      const topSelectorNotHover = `${topSelector}:not(:hover)`;
+      const topSelectorHref = `[href^="http"]`;
+
+      const result = parseRulesNoDebug(
+        topSelector,
+        { dark: true },
+        {
+          color: 'blue',
+          [style.not(style.hover)]: {
+            fontWeight: 'bold',
+            color: 'purple'
+          },
+          [style.attr.href.startsWithAny('http', 'https')]: {
+            [style.nthOfType('even')]: {
+              [style.prop.dark]: {
+                color: 'red'
+              },
+              [style.prop.light]: {
+                color: 'green'
+              }
+            }
+          }
+        }
+      );
+
+      console.log(
+        result
+      )
+
+      const expectedOutput = {
+        [topSelector]: {
+          'color': 'blue'
+        },
+        [`${topSelector}[href^="http"]:nth-of-type(even), ${topSelector}[href^="https"]:nth-of-type(even)`]: {
+          'color': 'red'
+        },
+      };
+
+      expect(result).toMatchObject(expectedOutput);
     });
 
   })
