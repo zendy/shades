@@ -18,6 +18,7 @@ import {
 } from './utilities';
 
 import mq from './helpers/mq';
+import style from './helpers/style';
 
 export const states = do {
   const normalFn = (selectors) => {
@@ -36,5 +37,6 @@ export const states = do {
 }
 
 export {
-  mq
+  mq,
+  style
 }

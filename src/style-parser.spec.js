@@ -1,6 +1,6 @@
 import css, {
   parseAllStyles,
-  parseAndStringify
+  stringifyRules
 } from './style-parser';
 
 import {
@@ -10,8 +10,15 @@ import {
 
 import style from './helpers/style';
 
-const parseRulesNoDebug = parseAllStyles
-const parseRulesWithDebug = parseAllStyles
+const parseRulesNoDebug = (selector, props, rules) => parseAllStyles({
+  parentSelector: [selector],
+  props
+})(rules).toJS();
+
+const parseAndStringify = (selector, props, rules) => parseAllStyles({
+  parentSelector: [selector],
+  props
+})(rules) |> stringifyRules;
 
 const topSelector = '#meow';
 
@@ -60,7 +67,7 @@ describe('parseRules', () => {
     });
   })
   it('supports the style combinators', () => {
-    const topSelectorHoverFocus = `${topSelector}:hover, ${topSelector}:focus`;
+    const topSelectorHoverFocus = `${topSelector}:hover,${topSelector}:focus`;
 
     const result = parseRulesNoDebug(topSelector, {}, {
       fontSize: '10px',
@@ -70,6 +77,7 @@ describe('parseRules', () => {
         border: '1px solid #fff'
       }
     });
+
 
     expect(result).toHaveProperty([topSelectorHoverFocus]);
 
@@ -159,8 +167,6 @@ describe('parseRules', () => {
       'color': 'navy'
     });
   });
-
-
 
   describe('Pattern matching', () => {
     it('supports pattern-matching rules for props', () => {
@@ -273,6 +279,31 @@ describe('parseRules', () => {
       });
     });
 
+    it('will correctly parse style.props.all helpers', () => {
+      const result = parseRulesNoDebug(
+        topSelector,
+        { mode: 'hi there', nextOne: 'dodgerblue' },
+        {
+          background: 'orange',
+          [style.props.all(style.prop.mode, style.prop.nextOne)]: {
+            fontWeight: 'bold',
+            color: 'purple'
+          },
+          [style.prop.nextOne]: (value) => ({
+            border: `1px solid ${value}`
+          })
+        }
+      );
+
+      expect(result[topSelector]).toMatchObject({
+        background: 'orange',
+        'font-weight': 'bold',
+        'color': 'purple',
+        'border': '1px solid dodgerblue'
+      });
+    });
+
+
     it('renders style.element helpers as pseudo-elements', () => {
       const topSelectorBefore = `${topSelector}::before`;
       const topSelectorAfter = `${topSelector}::after`;
@@ -332,15 +363,11 @@ describe('parseRules', () => {
         }
       );
 
-      console.log(
-        result
-      )
-
       const expectedOutput = {
         [topSelector]: {
           'color': 'blue'
         },
-        [`${topSelector}[href^="http"]:nth-of-type(even), ${topSelector}[href^="https"]:nth-of-type(even)`]: {
+        [`${topSelector}[href^="http"]:nth-of-type(even),${topSelector}[href^="https"]:nth-of-type(even)`]: {
           'color': 'red'
         },
       };
@@ -348,26 +375,108 @@ describe('parseRules', () => {
       expect(result).toMatchObject(expectedOutput);
     });
 
+    it('still supports the deprecated block matching helper', () => {
+      const result = parseRulesNoDebug(
+        topSelector,
+        { mode: 'hi there', nextOne: 'dodgerblue' },
+        {
+          background: 'purple',
+          fontFamily: 'deprecated-font',
+          '__match': {
+            mode: {
+              fontFamily: 'yay font',
+              color: 'green',
+              textDecoration: 'underline'
+            },
+            nextOne: value => ({
+              color: value
+            })
+          }
+        }
+      );
+
+      expect(result[topSelector]).toMatchObject({
+        'font-family': 'yay font',
+        'color': 'dodgerblue',
+        'background': 'purple',
+        'text-decoration': 'underline'
+      });
+    });
+
+    it('still supports the deprecated inline pattern matching', () => {
+      const result = parseRulesNoDebug(
+        topSelector,
+        { mode: 'hi there', nextOne: 'dodgerblue' },
+        {
+          background: {
+            mode: (value) => value === 'supersayan' && 'yellow',
+            nextOne: value => `value:${value}`,
+            default: 'orange'
+          },
+          fontFamily: 'deprecated-font',
+          '__match': {
+            mode: {
+              fontFamily: 'yay font',
+              color: 'green',
+              textDecoration: 'underline'
+            },
+            nextOne: value => ({
+              color: value
+            })
+          }
+        }
+      );
+
+      expect(result[topSelector]).toMatchObject({
+        'font-family': 'yay font',
+        'color': 'dodgerblue',
+        'background': 'value:dodgerblue',
+        'text-decoration': 'underline'
+      });
+    });
   })
 })
 
-describe('parseAndStringify', () => {
+describe('stringifyRules', () => {
   it('should not fail spectacularly', () => {
     const fakeGeneratedClass = 'lol-what-1234';
     const fakeProps = { mode: 'something', nextOne: 'hello' };
 
     const result = parseAndStringify(fakeGeneratedClass, fakeProps, {
       fontSize: '10px',
+      [mq('screen').from(500)]: {
+        fakeAttribute: 'whats-up'
+      },
       color: {
         mode: (value) => value + '-alright',
         kittensEverywhere: 'purple'
+      },
+      [style.prop.mode]: (value) => ({
+        background: `${value}-alright`,
+        [style.hover]: {
+          background: 'red'
+        }
+      }),
+      [style.prop.kittensEverywhere]: {
+        background: 'purple'
+      },
+      [style.hover]: {
+        textDecoration: 'underline'
+      },
+      [style.or(style.hover, style.focus)]: {
+        [style.or(style.active, style.visited)]: {
+          fontFamily: 'whatever'
+        }
       },
       fontWeight: 'normal'
     });
 
     expect(result).toEqual([
-      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;font-weight: normal; }`
+      `${fakeGeneratedClass}:hover:active,${fakeGeneratedClass}:focus:active,${fakeGeneratedClass}:hover:visited,${fakeGeneratedClass}:focus:visited { font-family: whatever; }`,
+      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;background: something-alright;font-weight: normal; }`,
+      `@media screen and (min-width:500px) { ${fakeGeneratedClass} { fake-attribute: whats-up; } }`,
+      `${fakeGeneratedClass}:hover { background: red; }`,
+      `${fakeGeneratedClass}:hover { text-decoration: underline; }`
     ])
   });
-
 });

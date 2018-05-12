@@ -247,8 +247,6 @@ const pseudoClassHandler = (specialChains) => (targetName) => {
   return specialChains?.[targetName];
 }
 
-const logMe = (msg) => (first, ...rest) => console.log(msg, [first, ...rest]) || first;
-
 const style = do {
   proxyPropertyGetter(
     pseudoClassHandler({

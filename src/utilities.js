@@ -50,7 +50,7 @@ export const reduceWhileFalsy = curry(
   (handlerFn, list) => reduceWhile(isFalsy, handlerFn, false, list)
 );
 
-export const reduceRecord = (handlerFn, initialValue = {}) => (original) => (
+export const reduceRecord = (initialValue) => (handlerFn) => (original) => (
   original |>
   toPairs |>
   reduce(

@@ -55,7 +55,6 @@ describe('style', () => {
   describe('Attributes and props', () => {
     describe('Attributes', () => {
       it('supports HTML attribute selectors', () => {
-        console.log('>>>>>>> style.attr.title', style.attr);
         expectString(
           style.attr.title
         ).toEqual('[title]');
