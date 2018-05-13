@@ -1,7 +1,6 @@
 {
   "presets": ["@babel/preset-env", "@babel/preset-stage-0", "@babel/preset-react"],
   "plugins": [
-    "import-glob",
     "@babel/plugin-proposal-class-properties",
     "@babel/plugin-proposal-object-rest-spread",
     "transform-custom-element-classes",

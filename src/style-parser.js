@@ -471,7 +471,7 @@ export const generateClassName = () => {
   return newClassName;
 }
 
-const css = ({ className, props = {}, target, showDebug, displayName }, styleRules) => {
+export const css = ({ className, props = {}, target, showDebug, displayName }, styleRules) => {
   const theSheet = getSheetFor(target);
   const generatedSelector = classNameWithProps(className, props);
   const generatedClassName = generatedSelector >> asClassName;
@@ -490,5 +490,3 @@ const css = ({ className, props = {}, target, showDebug, displayName }, styleRul
 
   return generatedSelector;
 }
-
-export default css;

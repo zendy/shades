@@ -1,3 +1,2 @@
-import css from './style-parser';
-export * from './style-parser';
+import { css } from './style-parser';
 export default css;

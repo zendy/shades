@@ -9,8 +9,19 @@ const moduleRule = (target, loader) => ({
   }
 });
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+const developmentConfig = isDevelopment && {
+  mode: 'development',
+  devtool: 'source-map'
+}
+
+const environmentConfig = developmentConfig || {
+  mode: 'production'
+};
+
 module.exports = {
-  mode: 'production',
+  ...environmentConfig,
   entry: {
     lib: './src/shades.js',
     react: './src/with-react.js',
@@ -23,7 +34,8 @@ module.exports = {
     libraryTarget: 'umd'
   },
   externals: [nodeExternals({
-    modulesFromFile: true
+    modulesFromFile: true,
+    whitelist: (value) => value.includes('@babel')
   })],
   module: {
     rules: [

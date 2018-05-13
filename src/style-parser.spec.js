@@ -1,4 +1,5 @@
-import css, {
+import {
+  css,
   parseAllStyles,
   stringifyRules
 } from './style-parser';

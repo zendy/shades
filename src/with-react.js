@@ -18,7 +18,7 @@ import {
   setPropTypes
 } from 'recompose';
 
-import css, { generateClassName } from './style-parser';
+import { css, generateClassName } from './style-parser';
 
 import {
   safeJoinWith,
