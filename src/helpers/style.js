@@ -19,20 +19,8 @@ import {
   stateful,
   proxyFunction,
   proxyPropertyGetter,
-  proxyGetterFunction,
   proxyRecord
 } from '../utilities';
-
-const interceptMethodCall = (methodName, interceptor) => (original) => (
-  new Proxy(original, {
-    get: (target, name) => {
-      const originalMethod = Reflect.get(target, name);
-      if (name === methodName) return (...args) => interceptor(originalMethod(...args));
-
-      return originalMethod;
-    }
-  })
-);
 
 const pseudoElementNames = [
   'before',
@@ -108,31 +96,18 @@ const COMBINATOR_INSERTS = {
   [KINDS.PROPERTY_OR]:    '||'
 }
 
-const kindKey            = Symbol('Selector Kind');
-const valueKey           = Symbol('Selector value');
-const stringKeyProp      = Symbol('The string key thing');
-const symbolKeyProp      = Symbol('The symbol of the key');
-const computeSelectorSym = Symbol('Compute Selector');
 const isDescriptorSym    = Symbol('Compute Selector');
 
-const symbolProp    = (target) => (original) => original?.[target] ?? original;
-const keyFromSymbol = (...args) => Symbol.keyFor(...args);
-const symbolFromKey = (...args) => Symbol.for(...args);
-const mapToProp     = (propName) => map(symbolProp(propName));
-const joinSymbols   = (separator) => compose(
-  symbolFromKey,
-  join(separator),
-  map(when(isSymbol).then(keyFromSymbol))
-);
+const keyFromSymbol      = (...args) => Symbol.keyFor(...args);
+const symbolFromKey      = (...args) => Symbol.for(...args);
 
 const asPseudoClass      = (name) => `:${name |> dasherize}`;
 const asPseudoElement    = (name) => `::${name |> dasherize}`;
 const asPropertySelector = (givenName) => `!!${givenName}`;
-const asPseudoFunction   = curry((name, value) => (
+
+const asPseudoFunction = curry((name, value) => (
   `:${name |> dasherize}(${value |> dasherize})`
 ));
-
-const descriptorToString = when(isString).otherwise(prop('originalKey'))
 
 const styleStore = stateful(
   new Map(),
@@ -154,7 +129,11 @@ const storeDescriptor = (descriptorItem) => {
 };
 
 const createDescriptor = (kind, config = {}) => (value) => {
-  const keyOrValue = config?.stringKey ?? value |> when(isString).otherwise(JSON.stringify);
+  const keyOrValue = (
+    config?.stringKey ?? value
+    |> when(isString).otherwise(JSON.stringify)
+  );
+
   const symbolKey  = symbolFromKey(keyOrValue);
 
   const selfDescriptor = {
@@ -170,6 +149,8 @@ const createDescriptor = (kind, config = {}) => (value) => {
 
   return selfDescriptor;
 };
+
+const descriptorToString = when(isString).otherwise(prop('originalKey'))
 
 const createAndStoreDescriptor = (kind, config) => compose(
   storeDescriptor,
@@ -197,10 +178,6 @@ const pseudoCombinators = {
     KINDS.COMBINATOR_OR
   )
 };
-
-const extendedString = (extraMethods) => (originalString) => proxyRecord(extraMethods)({
-  toString: () => originalString
-});
 
 const withAttribute = (givenName) => {
   const quoteString = JSON.stringify;
@@ -234,26 +211,29 @@ const withAttribute = (givenName) => {
 }
 
 const pseudoClassHandler = (specialChains) => (targetName) => {
-  if (pseudoClassNames.includes(targetName)) {
-    return targetName |> asPseudoClass;
-  }
+  if (pseudoClassNames.includes(targetName)) return (
+    targetName |> asPseudoClass
+  );
 
-  if (pseudoFunctionNames.includes(targetName)) {
-    return compose(
+  if (pseudoFunctionNames.includes(targetName)) return (
+    compose(
       asPseudoFunction(targetName),
       descriptorToString
-    );
-  }
+    )
+  );
+
+  if (pseudoElementNames.includes(targetName)) return (
+    targetName |> asPseudoElement
+  )
+
   return specialChains?.[targetName];
 }
 
-const style = do {
+const style = (
   proxyPropertyGetter(
     pseudoClassHandler({
       ...pseudoCombinators,
-      element: proxyPropertyGetter(
-        when(isString).then(asPseudoElement)
-      ),
+      element: asPseudoElement,
       pseudo: (name, value) => {
         if (isDefined(value)) return asPseudoFunction(name, value);
         return asPseudoClass(name);
@@ -261,7 +241,7 @@ const style = do {
       data: proxyPropertyGetter(
         when(isString).then(compose(
           withAttribute,
-          (value) => `data-${value}`,
+          concat('data-'),
           dasherize
         ))
       ),
@@ -280,8 +260,6 @@ const style = do {
       })
     })
   )
-}
-
-// style.props.all(style.prop.specialThing, style.prop.fantastic)
+)
 
 export default style;

@@ -61,7 +61,7 @@ const applyShadeContext = (original) => original >> getContext({
 
 const prettyComponentFactory = curry(
   (tagName, styleRules) => {
-    const baseClassName = generateClassName();
+    const baseClassName = `shades-${tagName}`;
     const prettyDisplayName = `shades.${tagName}`;
     const prettyElement = applyShadeContext << setDisplayName(prettyDisplayName) << (
       ({ targetDom, showDebug, children, className, ...props }) => {

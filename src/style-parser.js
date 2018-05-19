@@ -14,11 +14,14 @@ import {
   isString,
   isFunction,
   isDefined,
+  isNumber,
   isSymbol,
   joinString,
   stateful,
   isUndefinedOrFalse,
   getLoggers,
+  prettyLogs,
+  shadesLog,
   startsWithAny,
   firstItem,
   combineStrings,
@@ -54,7 +57,8 @@ import {
   equals,
   last,
   forEach,
-  all
+  all,
+  type
 } from 'ramda';
 
 import { getDescriptor, KINDS } from './helpers/style';
@@ -63,7 +67,20 @@ const asPseudoSelector = (key) => `:${dasherize(key)}`;
 const asPseudoElement = (key) => `::${dasherize(key)}`;
 const isOneOf = (...availableItems) => (givenItem) => availableItems.includes(givenItem);
 const mergeLeft = flip(merge);
-const toLog = (msg) => (first, ...rest) => console.log(msg, [first, ...rest]) || first;
+const toLog = (...msgs) => (first, ...rest) => console.log(...msgs, [first, ...rest]) || first;
+const toString = (value) => value.toString();
+
+const parserLog = shadesLog('Shades#parser');
+
+const stopRightThereCriminalScum = (validTypes, givenKey) => (givenValue) => {
+  parserLog.error(
+    `Shades could not parse the style for ${givenKey |> prettyLogs.purple} because the provided value type (${givenValue |> type |> prettyLogs.red}) does not match any valid types (${validTypes |> map(prettyLogs.green) |> join(', ')})`
+  );
+
+  throw new TypeError(
+  `Shades could not parse the style for ${givenKey} because the provided value type (${givenValue |> type}) does not match any valid types (${validTypes |> join(', ')})`
+);
+}
 
 const isSelector         = startsWithAny('.', '#', '>');
 const isAtRule           = startsWith('@');
@@ -84,24 +101,10 @@ const isPseudoElement    = isOneOf(
   'spellingError'
 );
 
+// Special property selectors typically start with !!, so this removes those
 const stripPropertyBangs = when(isPropertySelector).then(getSubstringAfter(2))
 
 const wrapContentString = (key) => when(equals('content', key)).then(JSON.stringify);
-
-const createStyleRule = (key, value) => {
-  const styleKey = (
-    key
-    |> unless(isBrowserPrefixed, dasherize)
-  );
-
-  const ruleValue = (
-    value
-    |> when(isArray).then(join(', '))
-    |> wrapContentString(key)
-  );
-
-  return `${styleKey}: ${ruleValue};`;
-}
 
 const whenFunctionCallWith = (...argsToGive) => when(isFunction).then((fnItem) => fnItem(...argsToGive));
 
@@ -147,7 +150,8 @@ const addToSelector = curry((selectorName, original) => (givenRules) => ({
   }
 }));
 
-const createStyleProperty = (key, value) => {
+const createStyleProperty = curry((key, value) => {
+  if (!isDefined(value)) console.error('createStyleProperty: value not defined!', { key, value });
   const ruleKey = (
     key
     |> unless(isBrowserPrefixed, dasherize)
@@ -162,7 +166,7 @@ const createStyleProperty = (key, value) => {
   return {
     [ruleKey]: ruleValue
   };
-}
+})
 
 const appendWith = (lastValue) => (firstValue) => [firstValue, lastValue].join('');
 
@@ -188,10 +192,10 @@ const combinators = (parentSelector, { props, ...extraCombinators }) => (results
     )),
     addRuleBlock: curry((targetSelector, givenRules) => givenRules |> addToSelector(targetSelector)),
     // addStyle :: RuleName -> RuleValue -> StyleRules
-    addStyle: curry(compose(
+    addStyle: curry((key, value) => compose(
       addToSelector(parentSelector),
       createStyleProperty
-    )),
+    )(key, value)),
     // extendSelector :: SelectorFragment -> Selector
     extendSelector: (trailingSelector) => parentSelector |> map(appendWith(trailingSelector)),
     // pseudoElementSelector :: String -> Selector PseudoSelector
@@ -213,7 +217,7 @@ const parseStyleMetaData = (ruleResponder) => {
       })(givenNestedRules)
     ));
 
-    if (isFunction(rules)) return rules |> whenFunctionCallWith(props) |> parseNestedWithResult(initialResult)(parentSelector);
+    if (isFunction(rules)) return rules |> whenFunctionCallWith(props) |> parseNestedWithResult(initialResult, parentSelector);
 
     const asNewParser = parseNestedWithResult(OrderedMap());
 
@@ -222,12 +226,12 @@ const parseStyleMetaData = (ruleResponder) => {
       const getCombinatorsFor = combinators(parentSelector, {
         props,
         parentSelector,
-        reevaluate: curry(evaluateRule(result)),
+        reevaluate: curry((key, value) => evaluateRule(result)(key, value)),
         parseNestedWithResult,
         parseNested: parseNestedWithResult(result),
         reduceNested: (handler) => reduceRecord(result)(
           (accumulated, [key, value]) => {
-            const parseNestedReduced = (valueToParse) => parseNestedWithResult(accumulated)(parentSelector)(valueToParse);
+            const parseNestedReduced = (valueToParse) => parseNestedWithResult(accumulated, parentSelector, valueToParse);
             return handler(parseNestedReduced)(key, value) || accumulated;
           }
         ),
@@ -312,7 +316,7 @@ export const parseAllStyles = parseStyleMetaData({
       if (props |> has(propName)) return (
         rulesForProp
         |> whenFunctionCallWith(props[propName])
-        |> parseNestedWithResult(accumulated)(parentSelector)
+        |> parseNestedWithResult(accumulated, parentSelector)
       );
       return accumulated;
     }, results)
@@ -380,9 +384,22 @@ export const parseAllStyles = parseStyleMetaData({
   style: ({ addStyle, props, reevaluate, parentSelector }) => (ruleName, value) => (
     value
     |> whenFunctionCallWith(props)
-    |> when(isObjectLiteral).then(reevaluate(ruleName))
-    |> when(isArray).then(join(', '))
-    |> when(isString).then(addStyle(ruleName))
+    |> when(isUndefinedOrFalse).otherwise(
+      // The following line is for cases where a function returns
+      // inline pattern matching blocks
+      when(isObjectLiteral).then(reevaluate(ruleName)).otherwise(
+        when(isArray).then(join(', ')),
+        when(isNumber).then(toString),
+        when(isString).then(addStyle(ruleName)).otherwise(
+          stopRightThereCriminalScum([
+            'Object',
+            'Array',
+            'Number',
+            'String'
+          ], ruleName)
+        )
+      )
+    )
   )
 })
 
@@ -443,6 +460,8 @@ const classNameWithProps = (baseClassName, props) => {
   return [baseClassName, propHash].join('-');
 }
 
+const computeClassnameHash = (...data) => objectHash(data);
+
 const appendRule = curry(
   (target, rule) => {
     const index = target.cssRules.length;
@@ -473,20 +492,25 @@ export const generateClassName = () => {
 
 export const css = ({ className, props = {}, target, showDebug, displayName }, styleRules) => {
   const theSheet = getSheetFor(target);
-  const generatedSelector = classNameWithProps(className, props);
-  const generatedClassName = generatedSelector >> asClassName;
+  const computedSelectorString = [
+    className,
+    computeClassnameHash(className, styleRules, props)
+  ].join('-');
 
-  const alreadyCached = shadeStore.getState('cached').has(generatedClassName);
+  const isAlreadyCached = shadeStore.getState('cached').has(computedSelectorString);
 
-  if (alreadyCached) return generatedSelector;
+  if (isAlreadyCached) return computedSelectorString;
 
-  shadeStore.lift(({ addToCache }) => addToCache(generatedClassName));
+  shadeStore.lift(({ addToCache }) => addToCache(computedSelectorString));
 
   const styleString = (
-    styleRules |> parseAllStyles({ parentSelector: [generatedClassName], props }) |> stringifyRules |> forEach(
+    styleRules
+    |> parseAllStyles({ parentSelector: [computedSelectorString |> asClassName], props })
+    |> stringifyRules
+    |> forEach(
       appendRule(theSheet)
     )
   );
 
-  return generatedSelector;
+  return computedSelectorString;
 }

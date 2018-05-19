@@ -20,6 +20,7 @@ describe('style', () => {
       style.visited
     ).toEqual(':visited');
   });
+
   it('supports pseudo-class functions as methods', () => {
     expectString(
       style.nthChild('even')
@@ -28,6 +29,34 @@ describe('style', () => {
       style.nthOfType('2n+1')
     ).toEqual(':nth-of-type(2n+1)');
   });
+
+  it('has a method for generating custom or not-yet-supported pseudo-classes', () => {
+    expectString(
+      style.pseudo('sitting')
+    ).toEqual(':sitting');
+    expectString(
+      style.pseudo('nthOfPerson', 'seated')
+    ).toEqual(':nth-of-person(seated)')
+  });
+
+  it('generates pseudo-elements from property getters', () => {
+    expectString(
+      style.before
+    ).toEqual('::before');
+    expectString(
+      style.after
+    ).toEqual('::after')
+  });
+
+  it('has a method for generating custom or not-yet-supported pseudo-elements', () => {
+    expectString(
+      style.element('valhalla')
+    ).toEqual('::valhalla');
+    expectString(
+      style.element('firstFewParagraphs')
+    ).toEqual('::first-few-paragraphs')
+  });
+
   it('supports the boolean not operator as a method', () => {
     expectString(
       style.not(style.hover)
@@ -115,10 +144,15 @@ describe('style', () => {
           style.prop.specialItem
         ).toEqual('!!specialItem');
       });
-      it('allows multiple props to be matched at one time', () => {
+      it('supports matching for multiple props at once', () => {
         expectSymbol(
           style.props.all(style.prop.specialItem, style.prop.thingamabob)
         ).toEqual('!!specialItem && !!thingamabob')
+      });
+      it('supports matching against a subset of possible props', () => {
+        expectSymbol(
+          style.props.any(style.prop.specialItem, style.prop.thingamabob)
+        ).toEqual('!!specialItem || !!thingamabob')
       });
 
     });

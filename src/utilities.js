@@ -30,6 +30,7 @@ import {
    mergeWith,
    concat,
    toPairs,
+   fromPairs,
    filter
 } from 'ramda';
 
@@ -99,8 +100,6 @@ export const includes = curry(
 
 export const noop      = ()       => {};
 export const id        = (value)  => value;
-export const every     = (...fns) => (...args) => allPass(fns)(...args);
-// export const either    = (...fns) => (...args) => reduceWhileFalsy((result, item) => item(...args), fns);
 export const firstItem = nth(0);
 
 export const isArray            = isType('array');
@@ -215,7 +214,7 @@ export const proxyFunction = (callHandler, chainHandlers) => {
   return outerProxy;
 };
 
-export const proxyGetterFunction = (genericHandler) => (
+export const proxyFunctionWithPropertyHandler = (functionHandler, propertyHandler) => (
   new Proxy(genericHandler, {
     get: (target, name) => {
       const output = genericHandler(name) ?? Reflect.get(target, name)
@@ -224,7 +223,7 @@ export const proxyGetterFunction = (genericHandler) => (
   })
 )
 
-export const proxyPassthroughFunction = (beforePassthrough) => (originalFn) => new Proxy(originalFn, {
+export const proxyPassthroughFunction = (beforePassthrousgh) => (originalFn) => new Proxy(originalFn, {
   get: (target, name) => {
     if (Reflect.has(target, name)) beforePassthrough(name);
     return Reflect.get(target, name);
@@ -234,6 +233,7 @@ export const proxyPassthroughFunction = (beforePassthrough) => (originalFn) => n
     return Reflect.apply(target, context, givenArgs);
   }
 });
+
 // Conditional chain expression :) stop using if & else, just use this.
 // Usage: ```
 // const actuallyDoTheThing = (value) => value + " is more than nothing";
@@ -270,23 +270,11 @@ export const when = (...predicates) => {
       otherwise: (...falsyHandlers) => evaluateWith(truthyHandlers)(falsyHandlers)
     }),
     otherwise: (...falsyHandlers) => evaluateWith()(falsyHandlers)
-    // oldOnlyThen: (...truthyHandlers) => (first, ...args) => {
-    //   const callablePredicates = predicates |> map(valueAsFunction);
-    //   const callableTruthyHandlers = truthyHandlers |> map(valueAsFunction);
-    //
-    //   const predicateChain = pipe(...callablePredicates);
-    //   const handlerChain = pipe(...callableTruthyHandlers);
-    //
-    //   const combined = [first, ...args];
-    //
-    //   if (predicateChain(...combined)) {
-    //     return handlerChain(...combined);
-    //   }
-    //
-    //   return first;
-    // },
   })
 };
+
+// Type stuff
+export const is = proxyPropertyGetter
 
 export const dotPath = curry(
   (pathStr, target) => target >> path(pathStr >> split('.'))
@@ -361,22 +349,59 @@ export const stateful = (initialValue, actions) => {
   return innerSelf;
 }
 
-const logMagenta = (...values) => tiza.bold().color('magenta')        .text(values.join(' ')).reset();
-const logBlue    = (...values) => tiza.bold().color('cornflowerblue') .text(values.join(' ')).reset();
-const logPurple  = (...values) => tiza.bold().color('mediumorchid')   .text(values.join(' ')).reset()
-const logOrange  = (...values) => tiza.bold().color('darkorange')     .text(values.join(' ')).reset();
+const joinArgs = (originalFn) => (...items) => items |> join(' ') |> originalFn;
 
-const logError   = () => tiza.bold().color('darkorange').text('Error: ').reset();
-const logWarning = () => tiza.bold().color('mediumorchid').text('Warning: ').reset();
-const logInfo    = () => tiza.bold().text('Info: ').reset();
+const logColours = {
+  green:   '#54d267',
+  red:     '#ca1e39',
+  orange:  '#ea821f',
+  magenta: '#ff6dfd',
+  purple:  '#b06dff',
+  blue:    '#60a3ff',
+  gray:    '#c2c2c2'
+};
 
-const shadesLog = (displayName = 'Shades') => {
-  const logger = logBlue('<' + displayName + '> ');
+const logMagenta = (...values) => tiza.bold().color('magenta')        .text(values.join(' '));
+const logBlue    = (...values) => tiza.bold().color('cornflowerblue') .text(values.join(' '));
+const logPurple  = (...values) => tiza.bold().color('mediumorchid')   .text(values.join(' '));
+const logOrange  = (...values) => tiza.bold().color('darkorange')     .text(values.join(' '));
+
+const logError   = () => tiza.bold().color('darkorange').text('Error: ');
+const logWarning = () => tiza.bold().color('mediumorchid').text('Warning: ');
+const logInfo    = () => tiza.bold().text('Info: ');
+
+export const prettyLog = (colour) => (value) => tiza.bold().color(logColours[colour]).text(value);
+
+export const prettyLogs = logColours |> toPairs |> map(([colourName, colourHex]) => ([
+  colourName,
+  (...values) => tiza.bold().color(colourHex).text(values |> join(' '))
+])) |> fromPairs;
+
+export const shadesLog = (displayName = 'Shades') => {
+  const makeLogTitle = (original) => prettyLogs.gray(`<${original |> prettyLogs.purple}> `)
+  const logger = (original = displayName) => (
+    prettyLogs.gray(`<${original |> prettyLogs.purple}> `
+  ))
 
   return {
-    error:   (...data) => logger.log(logError(), data.join(' ')),
-    warning: (...data) => logger.log(logWarning(), data.join(' ')),
-    info:    (...data) => logger.log(logError(), data.join(' '))
+    error:   (...data) => logger().log(
+      'Error:' |> prettyLogs.red,
+      ...data
+    ),
+    warning: (...data) => logger().log(
+      'Warning: ' |> prettyLogs.orange,
+      ...data
+    ),
+    info:    (...data) => logger().log(
+      'Info: ' |> prettyLogs.blue,
+      ...data
+    ),
+    deprecated: (originalName, originalFn) => originalFn |> proxyPassthroughFunction((propertyName) => (
+      logger(`Shades#${originalName}`).log(
+        prettyLogs.orange('Deprecation warning: '),
+        'The ', prettyLogs.purple(originalName), ' method is deprecated.  Please check the documentation for more details.'
+      )
+    ))
   }
 }
 

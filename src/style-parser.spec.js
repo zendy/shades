@@ -104,7 +104,7 @@ describe('parseRules', () => {
         background: 'green',
         ':hover': {
           border: '1px solid red',
-          fontWeight: '800'
+          fontWeight: 800
         }
       },
       textShadow: ['1px 1px 1px black', '2px 3px 4px white'],
@@ -225,11 +225,15 @@ describe('parseRules', () => {
       const result = parseRulesNoDebug(topSelector, { mode: 'supersayan' }, {
         fontSize: '10px',
         color: 'green',
+        zIndex: 5,
+        fontWeight: 'normal',
         [style.prop.mode]: (value) => ({
           color: value === 'dark' && 'navy',
-          padding: '100px'
-        }),
-        fontWeight: 'normal'
+          fontSize: null,
+          fontWeight: undefined,
+          padding: '100px',
+          zIndex: 0
+        })
       });
 
       expect(result).toHaveProperty([topSelector]);
@@ -237,7 +241,8 @@ describe('parseRules', () => {
         'font-size': '10px',
         'color': 'green',
         'padding': '100px',
-        'font-weight': 'normal'
+        'font-weight': 'normal',
+        'z-index': '0'
       });
     })
 
@@ -280,7 +285,7 @@ describe('parseRules', () => {
       });
     });
 
-    it('will correctly parse style.props.all helpers', () => {
+    it('will correctly parse the style.props combinators', () => {
       const result = parseRulesNoDebug(
         topSelector,
         { mode: 'hi there', nextOne: 'dodgerblue' },
@@ -290,6 +295,16 @@ describe('parseRules', () => {
             fontWeight: 'bold',
             color: 'purple'
           },
+          [style.props.all(style.prop.imaginaryThing, style.prop.mode)]: {
+            fontWeight: 'extra-light',
+            color: 'green'
+          },
+          [style.props.any(style.prop.imaginaryThing, style.prop.mode)]: {
+            thisIsADrill: 'everyone-just-chill'
+          },
+          [style.props.any(style.prop.imaginaryThing, style.prop.cannotConfirmNorDeny)]: {
+            thisIsNotADrill: 'everyone-just-freak-out'
+          },
           [style.prop.nextOne]: (value) => ({
             border: `1px solid ${value}`
           })
@@ -297,10 +312,11 @@ describe('parseRules', () => {
       );
 
       expect(result[topSelector]).toMatchObject({
-        background: 'orange',
-        'font-weight': 'bold',
-        'color': 'purple',
-        'border': '1px solid dodgerblue'
+        'background':      'orange',
+        'font-weight':     'bold',
+        'color':           'purple',
+        'border':          '1px solid dodgerblue',
+        'this-is-a-drill': 'everyone-just-chill'
       });
     });
 
@@ -314,11 +330,11 @@ describe('parseRules', () => {
         { dark: true },
         {
           color: 'blue',
-          [style.element.before]: {
+          [style.before]: {
             fontWeight: 'bold',
             color: 'purple'
           },
-          [style.element.after]: {
+          [style.after]: {
             [style.prop.dark]: {
               color: 'red'
             },
@@ -466,16 +482,43 @@ describe('stringifyRules', () => {
       },
       [style.or(style.hover, style.focus)]: {
         [style.or(style.active, style.visited)]: {
-          fontFamily: 'whatever'
+          fontFamily: 'whatever',
+          [style.or(style.before, style.after)]: {
+            fontWeight: 'super-ultra-bold',
+            [mq('screen').from(500)]: {
+              fontFamily: 'helvetica-is-trendy'
+            },
+          }
         }
       },
       fontWeight: 'normal'
     });
 
+    const hoverFocusActiveVisited = [
+      ':hover:active',
+      ':focus:active',
+      ':hover:visited',
+      ':focus:visited',
+    ].map((value) => `${fakeGeneratedClass}${value}`).join(',')
+
+    const hoverFocusActiveVisitedBeforeAfter = [
+      ':hover:active::before',
+      ':focus:active::before',
+      ':hover:visited::before',
+      ':focus:visited::before',
+      ':hover:active::after',
+      ':focus:active::after',
+      ':hover:visited::after',
+      ':focus:visited::after'
+    ].map((value) => `${fakeGeneratedClass}${value}`).join(',')
+
+
     expect(result).toEqual([
-      `${fakeGeneratedClass}:hover:active,${fakeGeneratedClass}:focus:active,${fakeGeneratedClass}:hover:visited,${fakeGeneratedClass}:focus:visited { font-family: whatever; }`,
-      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;background: something-alright;font-weight: normal; }`,
+      `${hoverFocusActiveVisitedBeforeAfter} { font-weight: super-ultra-bold; }`,
+      `@media screen and (min-width:500px) { ${hoverFocusActiveVisitedBeforeAfter} { font-family: helvetica-is-trendy; } }`,
       `@media screen and (min-width:500px) { ${fakeGeneratedClass} { fake-attribute: whats-up; } }`,
+      `${hoverFocusActiveVisited} { font-family: whatever; }`,
+      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;background: something-alright;font-weight: normal; }`,
       `${fakeGeneratedClass}:hover { background: red; }`,
       `${fakeGeneratedClass}:hover { text-decoration: underline; }`
     ])
