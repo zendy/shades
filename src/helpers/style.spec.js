@@ -61,6 +61,9 @@ describe('style', () => {
     expectString(
       style.not(style.hover)
     ).toEqual(':not(:hover)');
+    expectString(
+      style.not(style.or(style.hover, style.active))
+    ).toEqual(':not(:hover) || :not(:active)')
   });
   it('supports the and operator as a method', () => {
     expectSymbol(
@@ -135,6 +138,18 @@ describe('style', () => {
         expectSymbol(
           style.data.validation.anyOf('date', 'email', 'phone')
         ).toEqual('[data-validation="date"] || [data-validation="email"] || [data-validation="phone"]');
+      });
+
+      it('supports combinators on attribute selectors', () => {
+        expectSymbol(
+          style.and(style.attr.src, style.attr.href.startsWith('https'))
+        ).toEqual('[src] && [href^="https"]')
+        expectSymbol(
+          style.or(style.attr.src, style.attr.href.startsWith('https'))
+        ).toEqual('[src] || [href^="https"]')
+        expectSymbol(
+          style.or(style.attr.src, style.attr.href.startsWithAny('http', 'https'))
+        ).toEqual('[src] || [href^="http"] || [href^="https"]')
       });
     });
 

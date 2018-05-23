@@ -22,7 +22,7 @@ import { css, generateClassName } from './style-parser';
 
 import {
   safeJoinWith,
-  getLoggers
+  shadesLog
 } from './utilities';
 
 const wrapReactName = curry(
@@ -63,10 +63,10 @@ const prettyComponentFactory = curry(
   (tagName, styleRules) => {
     const baseClassName = `shades-${tagName}`;
     const prettyDisplayName = `shades.${tagName}`;
+    const logger = shadesLog(prettyDisplayName);
+
     const prettyElement = applyShadeContext << setDisplayName(prettyDisplayName) << (
       ({ targetDom, showDebug, children, className, ...props }) => {
-        const logger = getLoggers({ showDebug, displayName: prettyDisplayName });
-
         if (!targetDom) {
           const badConfigMsg = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
           logger.error(badConfigMsg);
@@ -95,10 +95,10 @@ const prettyComponentFactory = curry(
       }
     )
 
-    prettyElement.match = (matcherRules) => prettyComponentFactory(tagName, {
+    prettyElement.match = logger.deprecated('.match', (matcherRules) => prettyComponentFactory(tagName, {
       ...styleRules,
       '__match': matcherRules
-    });
+    }));
 
     return prettyElement;
   }

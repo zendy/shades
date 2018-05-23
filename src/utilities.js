@@ -223,7 +223,7 @@ export const proxyFunctionWithPropertyHandler = (functionHandler, propertyHandle
   })
 )
 
-export const proxyPassthroughFunction = (beforePassthrousgh) => (originalFn) => new Proxy(originalFn, {
+export const proxyPassthroughFunction = (beforePassthrough) => (originalFn) => new Proxy(originalFn, {
   get: (target, name) => {
     if (Reflect.has(target, name)) beforePassthrough(name);
     return Reflect.get(target, name);
@@ -303,21 +303,20 @@ export const betterSet = (initialData = []) => {
 
 export const stateful = (initialValue, actions) => {
   let _internalState = initialValue;
-  const reducers = Object.entries(actions).reduce((result, [name, fn]) => ({
+  const reducers = Object.entries(actions).reduce((result, [name, actionFn]) => ({
     ...result,
     [name]: (...args) => {
-      const actionResult = fn(_internalState, ...args);
+      const actionResult = actionFn(_internalState, ...args);
 
       if (isObjectLiteral(_internalState)) {
         const nextState = {
           ..._internalState,
           ...actionResult
         }
-        _internalState = nextState;
+
         return nextState;
       }
 
-      _internalState = actionResult;
       return actionResult;
     }
   }), {});
@@ -340,7 +339,7 @@ export const stateful = (initialValue, actions) => {
 
   const innerSelf = {
     lift: (handler) => {
-      handler(reducers, getState);
+      _internalState = handler(reducers, getState) ?? _internalState;
       return innerSelf;
     },
     getState
@@ -351,57 +350,49 @@ export const stateful = (initialValue, actions) => {
 
 const joinArgs = (originalFn) => (...items) => items |> join(' ') |> originalFn;
 
-const logColours = {
-  green:   '#54d267',
-  red:     '#ca1e39',
-  orange:  '#ea821f',
-  magenta: '#ff6dfd',
-  purple:  '#b06dff',
-  blue:    '#60a3ff',
-  gray:    '#c2c2c2'
-};
-
-const logMagenta = (...values) => tiza.bold().color('magenta')        .text(values.join(' '));
-const logBlue    = (...values) => tiza.bold().color('cornflowerblue') .text(values.join(' '));
-const logPurple  = (...values) => tiza.bold().color('mediumorchid')   .text(values.join(' '));
-const logOrange  = (...values) => tiza.bold().color('darkorange')     .text(values.join(' '));
-
-const logError   = () => tiza.bold().color('darkorange').text('Error: ');
-const logWarning = () => tiza.bold().color('mediumorchid').text('Warning: ');
-const logInfo    = () => tiza.bold().text('Info: ');
-
-export const prettyLog = (colour) => (value) => tiza.bold().color(logColours[colour]).text(value);
-
-export const prettyLogs = logColours |> toPairs |> map(([colourName, colourHex]) => ([
-  colourName,
-  (...values) => tiza.bold().color(colourHex).text(values |> join(' '))
-])) |> fromPairs;
+const logColours = (
+  {
+    green:   '#54d267',
+    red:     '#ca1e39',
+    orange:  '#ea821f',
+    magenta: '#ff6dfd',
+    purple:  '#b06dff',
+    blue:    '#60a3ff',
+    gray:    '#c2c2c2'
+  } |> toPairs |> map(([colourName, colourHex]) => ([
+    colourName,
+    tiza.bold().color(colourHex).text
+  ])) |> fromPairs
+);
 
 export const shadesLog = (displayName = 'Shades') => {
-  const makeLogTitle = (original) => prettyLogs.gray(`<${original |> prettyLogs.purple}> `)
-  const logger = (original = displayName) => (
-    prettyLogs.gray(`<${original |> prettyLogs.purple}> `
-  ))
+  const isProduction = process?.env?.NODE_ENV === 'production';
+  const shouldShowDebug = !isProduction;
+
+  const makeLogTitle = (original) => logColours.gray('<', original |> logColours.blue, '> ');
+  const logTitle = logColours.gray(`<${displayName |> logColours.blue}> `)
 
   return {
-    error:   (...data) => logger().log(
-      'Error:' |> prettyLogs.red,
+    error:   (...data) => logTitle.log(
+      'Error:' |> logColours.red,
       ...data
     ),
-    warning: (...data) => logger().log(
-      'Warning: ' |> prettyLogs.orange,
+    warning: (...data) => shouldShowDebug && logTitle.log(
+      'Warning: ' |> logColours.orange,
       ...data
     ),
-    info:    (...data) => logger().log(
-      'Info: ' |> prettyLogs.blue,
+    info:    (...data) => shouldShowDebug && logTitle.log(
+      'Info: ' |> logColours.blue,
       ...data
     ),
-    deprecated: (originalName, originalFn) => originalFn |> proxyPassthroughFunction((propertyName) => (
-      logger(`Shades#${originalName}`).log(
-        prettyLogs.orange('Deprecation warning: '),
-        'The ', prettyLogs.purple(originalName), ' method is deprecated.  Please check the documentation for more details.'
-      )
-    ))
+    deprecated: (originalName, originalFn) => originalFn |> when(shouldShowDebug).then(
+      proxyPassthroughFunction((propertyName) => (
+        makeLogTitle(displayName).log(
+          logColours.orange('Deprecation warning: '),
+          logColours.purple(originalName), ' is deprecated.  Please check the documentation for more details.'
+        )
+      ))
+    )
   }
 }
 
@@ -409,18 +400,12 @@ const runIfEnabled = (toggleSwitch) => (callbackFn) => (...args) => {
   if (toggleSwitch) return callbackFn(...args);
 }
 
-export const getLoggers = ({ showDebug, displayName }) => {
-  const runner = runIfEnabled(showDebug);
+export const getLoggers = ({ debug, displayName }) => {
+  const runner = runIfEnabled(debug);
   const logger = shadesLog(displayName);
 
   return ({
-    magenta: logMagenta,
-    blue:    logBlue,
-    purple:  logPurple,
-    orange:  logOrange,
-    matchNotFound: runner(({ ruleName }) => (
-      logger.info('No pattern for ', logMagenta(ruleName), ' was matched, and no default was specified.'))
-    ),
+    ...logColours,
     error:   logger.error, // Errors should be displayed always
     warning: runner(logger.warning),
     info:    runner(logger.info)

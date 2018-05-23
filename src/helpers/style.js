@@ -36,8 +36,10 @@ const pseudoElementNames = [
 ];
 
 const pseudoFunctionNames = [
+  'any',
   'dir',
   'lang',
+  'matches',
   'not',
   'nthChild',
   'nthLastChild',
@@ -47,10 +49,10 @@ const pseudoFunctionNames = [
 
 const pseudoClassNames = [
   'active',
-  'any',
   'anyLink',
   'checked',
   'default',
+  'defined',
   'disabled',
   'empty',
   'enabled',
@@ -59,6 +61,7 @@ const pseudoClassNames = [
   'firstOfType',
   'fullscreen',
   'focus',
+  'focusWithin',
   'hover',
   'indeterminate',
   'inRange',
@@ -71,6 +74,7 @@ const pseudoClassNames = [
   'onlyOfType',
   'optional',
   'outOfRange',
+  'placeholderShown',
   'readOnly',
   'readWrite',
   'required',
@@ -97,6 +101,7 @@ const COMBINATOR_INSERTS = {
 }
 
 const isDescriptorSym    = Symbol('Compute Selector');
+const isDescriptor = (value) => value?.[isDescriptorSym] ?? false;
 
 const keyFromSymbol      = (...args) => Symbol.keyFor(...args);
 const symbolFromKey      = (...args) => Symbol.for(...args);
@@ -106,7 +111,7 @@ const asPseudoElement    = (name) => `::${name |> dasherize}`;
 const asPropertySelector = (givenName) => `!!${givenName}`;
 
 const asPseudoFunction = curry((name, value) => (
-  `:${name |> dasherize}(${value |> dasherize})`
+  `:${name |> dasherize}(${value})`
 ));
 
 const styleStore = stateful(
@@ -150,7 +155,10 @@ const createDescriptor = (kind, config = {}) => (value) => {
   return selfDescriptor;
 };
 
-const descriptorToString = when(isString).otherwise(prop('originalKey'))
+const toString = (value) => value.toString();
+
+const descriptorToString = when(isDescriptor).then(prop('originalKey'));
+const anythingToString = when(isString).otherwise(toString);
 
 const createAndStoreDescriptor = (kind, config) => compose(
   storeDescriptor,
@@ -160,7 +168,12 @@ const createAndStoreDescriptor = (kind, config) => compose(
 const createCombinator = (kind) => (...data) => {
   const stringKey = (
     data
-    |> map(when(isString).otherwise(prop('originalKey')))
+    |> map(
+      compose(
+        anythingToString,
+        descriptorToString
+      )
+    )
     |> join(` ${COMBINATOR_INSERTS[kind]} `)
   );
 

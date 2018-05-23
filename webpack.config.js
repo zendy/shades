@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const path = require('path');
 
@@ -9,7 +10,11 @@ const moduleRule = (target, loader) => ({
   }
 });
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const nodeEnv = process.env.NODE_ENV || 'development';
+
+const isTest = nodeEnv === 'test';
+const isProduction = nodeEnv === 'production';
+const isDevelopment = !isProduction && !isTest;
 
 const developmentConfig = isDevelopment && {
   mode: 'development',

@@ -78,6 +78,10 @@ describe('Shades DOM', () => {
           content: 'hi there'
         }
       }
+    }).match({
+      dark: {
+        color: 'blue'
+      }
     });
 
     const subject = mountShades(
@@ -91,4 +95,25 @@ describe('Shades DOM', () => {
     expect(anchorItem).toHaveProp('aria-label', 'hello');
     expect(anchorItem).not.toHaveProp('superDark');
   });
+
+  it('should write the expected styles to the stylesheet', () => {
+    const Linky = shades.a({
+      background: 'purple',
+      fontWeight: {
+        dark: 600,
+        light: 200
+      }
+    });
+
+    const darkSubject = mountShades(
+      <Linky dark>Hello</Linky>
+    );
+
+    console.log(document.querySelectorAll('style[data-shades]'));
+
+    const styleSheetContents = [...document.querySelector('style[data-shades]').sheet.cssRules].map(item => item.cssText).join('\n\n');
+
+    console.log(styleSheetContents)
+  });
+
 });

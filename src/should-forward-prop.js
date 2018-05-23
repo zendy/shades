@@ -18,8 +18,6 @@ const isNotHtmlTag = (value) => !isString(value);
 const isReactProp  = (propName) => reactProps.includes(propName);
 const isDataOrAria = startsWithAny('data-', 'aria-');
 
-
-
 // Determines whether a property can be passed directly to
 // a target node - if the node is a standard HTML tag, the
 // property name is checked against a list of known acceptable
@@ -31,7 +29,9 @@ const shouldForwardProperty = (tagName, propName) => (
   // receiver is a standard HTML tag name (which will be a string here)
   // If `tagName` is anything other than a string, its not an HTML tag
   isNotHtmlTag(tagName)
+  // React props are also passed straight through for HTML tags
   || isReactProp(propName)
+  // Same with data and aria attributes
   || isDataOrAria(propName)
   || isHtmlProp(tagName, propName)
 );
