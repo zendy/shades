@@ -61,9 +61,6 @@ describe('style', () => {
     expectString(
       style.not(style.hover)
     ).toEqual(':not(:hover)');
-    expectString(
-      style.not(style.or(style.hover, style.active))
-    ).toEqual(':not(:hover) || :not(:active)')
   });
   it('supports the and operator as a method', () => {
     expectSymbol(
