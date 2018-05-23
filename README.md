@@ -14,6 +14,10 @@ Updates coming continuously, as we finish up our final testing and bug fixing, i
 
 If you want to try it out in a repl, [here's one I prepared earlier!](https://codesandbox.io/s/v3ypj97xz3)
 
+## Helpers
+
+You can find the list of all the different supported helpers, including `style` and `mq` and how to use them over at the [Helper Docs.](docs/helpers.md)
+
 ## Why
 
 This library follows very closely with the syntax of certain prior-art, particularly: Glamorous.  Glamorous, in turn, follows a similar path to Aphrodite.  I looked into the pros and cons of both the Object-Literal style and the Template Literal style for building Shades, and decided to pursue the former, not because template literals are unfamiliar, but because I felt that the reasons I had for even considering a CSS-in-JS library were to get away from the CSS language.  So it made most sense to me to stay closer to JavaScript, in this case.  One day in the future this may change, but for now, if you want Template Literal syntax in addition to the Object Literal syntax, you will need to submit a PR :)
@@ -30,7 +34,7 @@ Please ensure you install all the peer dependencies that are mentioned by yarn/n
 
 ## Usage
 
-### Simple Tutorial
+### Examples Galore
 
 This assumes you're going to be using React.  There is an agnostic `css` function that you can also use, but it's somewhat verbose.  Documentation for it will be coming later on.
 
@@ -154,53 +158,46 @@ const Button = shades.button({
   border: '1px solid',
   // Yes, all props passed to this component can be used in both patterns and in functions
   color: ({ dark }) => dark && colours.text.dark,
-  // Use the states helper to simplify pseudo-classes like `:hover`, `:active` and `:visited`
+  // Use the style helper to simplify pseudo-classes like `:hover`, `:active` and `:visited`
   // Alternatively, just specify a key like `':hover'` (see the SimpleBox example above)
-  ...states({
-    hover: {
-      fontWeight: 'bold',
-      textDecoration: 'underline',
-      // You can even do media queries way down here
-      '@media screen and (max-width: 400px)': {
-        border: '1px dotted',
-        ...states({
-          active: {
-            border: '2px dotted'
-          }
-        })
-      },
-      // There's even a media query helper library built-in!
-      // Here's an equivalent version using the mq helper:
-      [mq('screen').to(400)]: {
-        border: '1px dotted',
-        ...states({
-          active: {
-            border: '2px dotted'
-          }
-        })
+  [style.hover]: {
+    fontWeight: 'bold',
+    textDecoration: 'underline',
+    // You can even do media queries way down here
+    '@media screen and (max-width: 400px)': {
+      border: '1px dotted',
+      [style.active]: {
+        border: '2px dotted'
+      }
+    },
+    // There's even a media query helper library built-in!
+    // Here's an equivalent version using the mq helper:
+    [mq().screen().to(400)]: {
+      border: '1px dotted',
+      [style.active]: {
+        border: '2px dotted'
       }
     }
-  })
+  }
 });
 
 const PseudoIcon = shades.i({
   // For pseudo-elements like `::before`, `::after`, `::first-letter`, etc
-  // you don't need to include the `::` prefix, because Shades knows what you
-  // mean (since thankfully there are no standard style rules that have the same names)
-  before: {
+  // you can also use the style helper as an alternative to prefixing your
+  // keys with '::'
+  [style.before]: {
     fontSize: '15px',
     content: 'Hello there!'
   },
-  // And as expected, you can do this in pseudo states too
-  ...states({
-    hover: {
-      after: {
-        fontFamily: 'Material Icons',
-        content: 'close'
-      }
+  // And as expected, you can nest style helper keys however you like
+  [style.hover]: {
+    [style.after]: {
+      fontFamily: 'Material Icons',
+      content: 'close'
     }
-  }),
-  // Browser prefixes are also supported as string keys
+  }
+  // Browser prefixes are passed through without any issue, so long as
+  // they're defined as strings
   '-webkit-text-stroke': '4px navy'
 })
 
@@ -209,61 +206,48 @@ const PseudoIcon = shades.i({
 const PatternButton = shades.button({
   padding: '10px',
   boxShadow: '3px 3px 3px #000',
-  backgroundColor: {
-    // Only the first match will become the value of this rule, in the case of
-    // multiple matching props
-    dark: colours.button.dark,
-    light: colours.button.light,
+  backgroundColor: '#fff',
+  [style.prop.dark]: {
+    backgroundColor: colors.button.dark
+    color: colors.text.dark
+  },
+  // In the case of duplicate rules, the last instance will be the one that is used
+  [style.prop.light]: {
+    backgroundColor: colors.button.light,
+    color: colours.text.light
+  },
+  [style.prop.mode]: (value) => {
     // Yep, even functions can be used in pattern matching. In this case,
     // `value` is the value of the `mode` property, if its defined.
     // If `mode` is not `super`, then this fn returns false, and
-    // this property will be skipped.  You can return any falsy
-    // value from a function to skip the style rule.
-    mode: value => value === 'super' && 'yellow',
-    // If there is a "default" value defined, then that will be the value
-    // if there are no matching props. If you don't have a default and no
-    // props match, then the style rule will be skipped safely.
-    default: '#ffffff'
+    // this property will be skipped.  You can return false, undefined or
+    // null value from a function to skip the style rule.
+    backgroundColor: value === 'super' && 'yellow'
+    color: 'green'
   },
-  // Example of a pattern without defaults:
-  color: {
-    dark: colours.text.dark,
-    light: colours.text.light,
-    mode: 'green'
-    // If this component is not given any of those 3 props,
-    // then the `color` rule will be skipped, since there is no
-    // default value defined.
-  }
-});
-
-// The above example is called "inline pattern matching" - where
-// you change the value of a single rule based on certain props.
-// But sometimes you need to set multiple style rules for a matching prop,
-// so Shades now supports a method for that!
-const BlockPatternBox = shades.div({
-  padding: '10px',
-  boxShadow: '3px 3px 3px #000',
-  color: '#000'
-}).match({
-  // By calling .match at the end of the call to an element,
-  // we append block patterns to the main styles based on which
-  // props have been passed in - like the inverse of inline patterns.
-  dark: {
-    color: 'purple',
-    border: '5px solid green'
+  // Now on to combinators - you can do the following combinators on
+  // pseudos and props
+  [style.and(style.hover, style.active)]: {
+    [style.props.any(style.prop.dark, style.prop.light)]: {
+      // You can even use arrays for rules that support multiple values
+      boxShadow: ['2px 2px 3px 2px #000', '0px 0px 5px 2px dodgerblue']
+    }
   },
-  light: {
-    color: 'cyan',
-    border: '10px solid magenta',
-    background: 'red'
+  // Then there's attributes, which you can select for like so:
+  [style.attr.src]: {
+    textDecoration: 'underline'
+  },
+  // And of course, combinators on attributes too:
+  [style.and(style.attr.src, style.attr.href.startsWith('http', 'https'))]: {
+    content: 'icon-lock'
   }
 });
 
 export default () => (
   <SimpleBox>
-    <Button light>Hello there</Button>
-    <Button dark>Goodbye there</Button>
-    <Button mode="super">Goodbye there</Button>
+    <PatternButton light>Hello there</PatternButton>
+    <PatternButton dark>Goodbye there</PatternButton>
+    <PatternButton mode="super"><PseudoIcon />Goodbye there</PatternButton>
     <Button>This is plain</Button>
   </SimpleBox>
 );
@@ -289,13 +273,7 @@ export default () => (
 You can also pass along `data` and `aria` attributes as you please!
 
 ```js
-<Button data-greeting="Hello there" aria-label="This is not a good label, just an example">
+<Linky data-greeting="Hello there" aria-label="This is not a good label, just an example">
   Click me!
-</Button>
+</Linky>
 ```
-
-## Helpers
-
-Check out the [documentation on our built-in helpers](docs/helpers.md)
-
-More documentation coming soon, but I hope this helps you to get started :)

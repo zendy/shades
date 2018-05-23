@@ -1,19 +1,30 @@
-import css, {
+import {
+  css,
   parseAllStyles,
-  parseAndStringify
+  stringifyRules
 } from './style-parser';
 
 import {
-  states
+  states,
+  mq
 } from './helpers';
 
-const parseRulesNoDebug = parseAllStyles
-const parseRulesWithDebug = parseAllStyles
+import style from './helpers/style';
+
+const parseRulesNoDebug = (selector, props, rules) => parseAllStyles({
+  parentSelector: [selector],
+  props
+})(rules).toJS();
+
+const parseAndStringify = (selector, props, rules) => parseAllStyles({
+  parentSelector: [selector],
+  props
+})(rules) |> stringifyRules;
+
+const topSelector = '#meow';
 
 describe('parseRules', () => {
   it('takes an object of rules and gives me back some more rules as strings', () => {
-    const topSelector = '#meow';
-
     const result = parseRulesNoDebug(topSelector, {}, {
       fontSize: '10px',
       color: 'blue',
@@ -23,7 +34,6 @@ describe('parseRules', () => {
     expect(result).toHaveProperty([topSelector]);
   })
   it('combines nested pseudo-elements and pseudo-selectors with the main selector', () => {
-    const topSelector = '#meow';
     const topSelectorHover = `${topSelector}:hover`;
     const topSelectorBefore = `${topSelector}::before`;
 
@@ -44,44 +54,45 @@ describe('parseRules', () => {
     expect(result).toHaveProperty([topSelectorHover]);
     expect(result).toHaveProperty([topSelectorBefore]);
 
-    expect(result[topSelector]).toEqual(
-      expect.arrayContaining(['font-size: 10px;', 'color: blue;'])
-    );
-    expect(result[topSelectorHover]).toEqual(
-      expect.arrayContaining(['color: red;'])
-    );
-    expect(result[topSelectorBefore]).toEqual(
-      expect.arrayContaining(['content: "hi there";', 'border: 1px solid #000;'])
-    );
+    expect(result[topSelector]).toMatchObject({
+      'font-size': '10px',
+      'color': 'blue',
+      'font-weight': 'normal'
+    });
+    expect(result[topSelectorHover]).toMatchObject({
+      'color': 'red'
+    });
+    expect(result[topSelectorBefore]).toMatchObject({
+      'content': '"hi there"',
+      'border': '1px solid #000'
+    });
   })
-  it('supports the states.all helper', () => {
-    const topSelector = '#meow';
-    const topSelectorHover = `${topSelector}:hover`;
-    const topSelectorFocus = `${topSelector}:focus`;
+  it('supports the style combinators', () => {
+    const topSelectorHoverFocus = `${topSelector}:hover,${topSelector}:focus`;
 
     const result = parseRulesNoDebug(topSelector, {}, {
       fontSize: '10px',
       color: 'blue',
-      ...states.all('hover', 'focus')({
+      [style.or(style.hover, style.focus)]: {
         color: 'purple',
         border: '1px solid #fff'
-      })
+      }
     });
 
-    expect(result).toHaveProperty([topSelectorHover]);
-    expect(result).toHaveProperty([topSelectorFocus]);
 
-    const expectedStyles = expect.arrayContaining(['color: purple;', 'border: 1px solid #fff;'])
+    expect(result).toHaveProperty([topSelectorHoverFocus]);
 
-    expect(result[topSelectorHover]).toEqual(
-      expectedStyles
-    );
-    expect(result[topSelectorFocus]).toEqual(
+    const expectedStyles = {
+      'color': 'purple',
+      'border': '1px solid #fff'
+    };
+
+    expect(result[topSelectorHoverFocus]).toMatchObject(
       expectedStyles
     );
   })
+  // TODO: stop using this as my "test-everything-ever" bucket
   it('should shift at-rules up to the top level', () => {
-    const topSelector = '#meow';
     const topSelectorHover = `${topSelector}:hover`;
     const mq = '@media screen and (max-width: 800px)';
 
@@ -93,7 +104,7 @@ describe('parseRules', () => {
         background: 'green',
         ':hover': {
           border: '1px solid red',
-          fontWeight: '800'
+          fontWeight: 800
         }
       },
       textShadow: ['1px 1px 1px black', '2px 3px 4px white'],
@@ -108,181 +119,209 @@ describe('parseRules', () => {
     expect(result).toHaveProperty([mq, topSelector]);
     expect(result).toHaveProperty([mq, topSelectorHover]);
 
-    expect(result[topSelector]).toEqual(
-      expect.arrayContaining([
-        'font-size: 10px;',
-        'color: blue;',
-        'bubbles: 1px solid black;'
-      ])
+    expect(result[topSelector]).toMatchObject({
+      'font-size': '10px',
+      'color': 'blue',
+      'bubbles': '1px solid black'
+    });
+
+    expect(result[mq][topSelector]).toMatchObject({
+      'font-size': '90px',
+      'background': 'green'
+    });
+    expect(result[mq][topSelectorHover]).toMatchObject({
+      'font-weight': '800',
+      'border': '1px solid red'
+    });
+  });
+
+  it('supports using functions as rules that take all given props as its argument', () => {
+    const result = parseRulesNoDebug(
+      topSelector,
+      { dark: true, darkColor: 'navy' },
+      {
+        fontWeight: 'normal',
+        color: (allProps) => allProps.darkColor ?? 'fallback'
+      }
     );
-    expect(result[mq][topSelector]).toEqual(
-      expect.arrayContaining([
-        'font-size: 90px;',
-        'background: green;'
-      ])
+
+    expect(result[topSelector]).toMatchObject({
+      'font-weight': 'normal',
+      'color': 'navy'
+    })
+  });
+
+  it('really seriously supports all possible permutations of functions as style rule values', () => {
+    const resultSimple = parseRulesNoDebug(
+      topSelector,
+      { dark: 'blue' },
+      {
+        [mq().portrait().from(370)]: (allProps) => ({
+          [style.prop.dark]: value => ({
+            color: ({ dark }) => value === dark && allProps.dark === value && 'navy'
+          })
+        })
+      }
     );
-    expect(result[mq][topSelectorHover]).toEqual(
-      expect.arrayContaining([
-        'font-weight: 800;',
-        'border: 1px solid red;'
-      ])
-    );
+
+    expect(resultSimple[mq().portrait().from(370)][topSelector]).toMatchObject({
+      'color': 'navy'
+    });
   });
 
   describe('Pattern matching', () => {
     it('supports pattern-matching rules for props', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { dark: true }, {
         fontSize: '10px',
-        color: {
-          dark: 'navy',
-          default: 'green'
+        color: 'green',
+        [style.prop.dark]: {
+          color: 'navy'
         },
         fontWeight: 'normal'
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: navy;');
+      expect(result[topSelector]).toMatchObject({
+        'color': 'navy'
+      })
     })
 
     it('supports a default value when no pattern match found', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { }, {
         fontSize: '10px',
-        color: {
-          dark: 'navy',
-          default: 'green'
+        color: 'green',
+        [style.prop.dark]: {
+          color: 'navy'
         },
         fontWeight: 'normal'
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: green;');
+      expect(result[topSelector]).toMatchObject({
+        'color': 'green'
+      })
     })
 
     it('supports a pattern match rule as a function that takes the value of the named prop', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { mode: 'dark' }, {
         fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          default: 'green'
-        },
+        color: 'blue',
+        [style.prop.mode]: value => ({
+          color: `green-${value}`,
+        }),
         fontWeight: 'normal'
       });
 
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: navy;');
-    })
-
-    it('tries the next valid match when the current matcher returns null, undefined, or false', () => {
-      const topSelector = '#meow';
-
-      const result = parseRulesNoDebug(topSelector, { mode: 'supersayan', nextOne: 'hello' }, {
-        fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          nextOne: 'purple',
-          default: 'green'
-        },
-        fontWeight: 'normal'
+      expect(result[topSelector]).toMatchObject({
+        'font-size': '10px',
+        'color': 'green-dark',
+        'font-weight': 'normal'
       });
-
-      expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: purple;');
     })
 
     it('uses the default value if the matched function returns null, undefined, or false', () => {
-      const topSelector = '#meow';
-
       const result = parseRulesNoDebug(topSelector, { mode: 'supersayan' }, {
         fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          default: 'green'
-        },
-        fontWeight: 'normal'
+        color: 'green',
+        zIndex: 5,
+        fontWeight: 'normal',
+        [style.prop.mode]: (value) => ({
+          color: value === 'dark' && 'navy',
+          fontSize: null,
+          fontWeight: undefined,
+          padding: '100px',
+          zIndex: 0
+        })
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: green;');
-    })
-
-    it('uses only the first match found, even when there are multiple valid matches', () => {
-      const topSelector = '#meow';
-
-      const result = parseRulesNoDebug(topSelector, { mode: 'dark', nextOne: 'hello' }, {
-        fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          nextOne: 'purple',
-          default: 'green'
-        },
-        fontWeight: {
-          mode: 'bold'
-        },
-        __match: {
-          mode: {
-            color: 'blue',
-            fontWeight: 'bold'
-          }
-        }
+      expect(result[topSelector]).toMatchObject({
+        'font-size': '10px',
+        'color': 'green',
+        'padding': '100px',
+        'font-weight': 'normal',
+        'z-index': '0'
       });
-
-      expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).toContain('color: navy;');
     })
 
-    it('skips the rule entirely if there is no match and no default value', () => {
-      const topSelector = '#meow';
-
+    it('skips the rule entirely if there is no match', () => {
       const result = parseRulesNoDebug(topSelector, { mode: 'something unknown', nextOne: 'hello' }, {
         fontSize: '10px',
-        color: {
-          mode: (value) => value === 'dark' && 'navy',
-          kittensEverywhere: 'purple'
+        [style.prop.mode]: (value) => ({
+          color: value === 'dark' && 'navy'
+        }),
+        [style.prop.kittensEverywhere]: {
+          color: 'purple'
         },
         fontWeight: 'normal'
       });
 
       expect(result).toHaveProperty([topSelector]);
-      expect(result[topSelector]).not.toEqual(expect.arrayContaining([
-        expect.stringContaining('color:')
-      ]));
+      expect(result[topSelector]).not.toHaveProperty(['color']);
     })
 
     it('will render a block of styles for a block pattern', () => {
-      const topSelector = '#philip-is-awesome';
-
       const result = parseRulesNoDebug(
         topSelector,
         { mode: 'hi there', nextOne: 'dodgerblue' },
         {
-          __match: {
-            mode: {
-              fontWeight: 'bold',
-              color: 'purple'
-            },
-            nextOne: value => ({
-              color: value,
-              border: '1px solid #ccc'
-            })
-          }
+          [style.prop.mode]: {
+            fontWeight: 'bold',
+            color: 'purple'
+          },
+          [style.prop.nextOne]: (value) => ({
+            color: value,
+            border: '1px solid #ccc'
+          })
         }
       );
 
-      expect(result[topSelector]).toEqual(expect.arrayContaining([
-        expect.stringContaining('font-weight: bold'),
-        expect.stringContaining('color: dodgerblue')
-      ]));
+      expect(result[topSelector]).toMatchObject({
+        'font-weight': 'bold',
+        'color': 'dodgerblue',
+        'border': '1px solid #ccc'
+      });
     });
 
-    it('renders "before" and "after" keys as pseudo-elements', () => {
-      const topSelector = '#philip-is-awesome';
+    it('will correctly parse the style.props combinators', () => {
+      const result = parseRulesNoDebug(
+        topSelector,
+        { mode: 'hi there', nextOne: 'dodgerblue' },
+        {
+          background: 'orange',
+          [style.props.all(style.prop.mode, style.prop.nextOne)]: {
+            fontWeight: 'bold',
+            color: 'purple'
+          },
+          [style.props.all(style.prop.imaginaryThing, style.prop.mode)]: {
+            fontWeight: 'extra-light',
+            color: 'green'
+          },
+          [style.props.any(style.prop.imaginaryThing, style.prop.mode)]: {
+            thisIsADrill: 'everyone-just-chill'
+          },
+          [style.props.any(style.prop.imaginaryThing, style.prop.cannotConfirmNorDeny)]: {
+            thisIsNotADrill: 'everyone-just-freak-out'
+          },
+          [style.prop.nextOne]: (value) => ({
+            border: `1px solid ${value}`
+          })
+        }
+      );
+
+      expect(result[topSelector]).toMatchObject({
+        'background':      'orange',
+        'font-weight':     'bold',
+        'color':           'purple',
+        'border':          '1px solid dodgerblue',
+        'this-is-a-drill': 'everyone-just-chill'
+      });
+    });
+
+
+    it('renders style.element helpers as pseudo-elements', () => {
       const topSelectorBefore = `${topSelector}::before`;
       const topSelectorAfter = `${topSelector}::after`;
 
@@ -291,48 +330,197 @@ describe('parseRules', () => {
         { dark: true },
         {
           color: 'blue',
-          before: {
+          [style.before]: {
             fontWeight: 'bold',
             color: 'purple'
           },
-          after: {
-            color: {
-              dark: 'red',
-              light: 'green'
+          [style.after]: {
+            [style.prop.dark]: {
+              color: 'red'
+            },
+            [style.prop.light]: {
+              color: 'green'
             }
           }
         }
       );
 
       const expectedOutput = {
-        [topSelector]: ['color: blue;'],
-        [topSelectorBefore]: ['font-weight: bold;', 'color: purple;'],
-        [topSelectorAfter]: ['color: red;'],
+        [topSelector]: { 'color': 'blue' },
+        [topSelectorBefore]: { 'font-weight': 'bold', 'color': 'purple' },
+        [topSelectorAfter]: { 'color': 'red' },
       };
 
-      expect(result).toEqual(expectedOutput);
+      expect(result).toMatchObject(expectedOutput);
     });
 
+    it('supports pseudo-functions from the style helper', () => {
+      const topSelectorNotHover = `${topSelector}:not(:hover)`;
+      const topSelectorHref = `[href^="http"]`;
+
+      const result = parseRulesNoDebug(
+        topSelector,
+        { dark: true },
+        {
+          color: 'blue',
+          [style.not(style.hover)]: {
+            fontWeight: 'bold',
+            color: 'purple'
+          },
+          [style.attr.href.startsWithAny('http', 'https')]: {
+            [style.nthOfType('even')]: {
+              [style.prop.dark]: {
+                color: 'red'
+              },
+              [style.prop.light]: {
+                color: 'green'
+              }
+            }
+          }
+        }
+      );
+
+      const expectedOutput = {
+        [topSelector]: {
+          'color': 'blue'
+        },
+        [`${topSelector}[href^="http"]:nth-of-type(even),${topSelector}[href^="https"]:nth-of-type(even)`]: {
+          'color': 'red'
+        },
+      };
+
+      expect(result).toMatchObject(expectedOutput);
+    });
+
+    it('still supports the deprecated block matching helper', () => {
+      const result = parseRulesNoDebug(
+        topSelector,
+        { mode: 'hi there', nextOne: 'dodgerblue' },
+        {
+          background: 'purple',
+          fontFamily: 'deprecated-font',
+          '__match': {
+            mode: {
+              fontFamily: 'yay font',
+              color: 'green',
+              textDecoration: 'underline'
+            },
+            nextOne: value => ({
+              color: value
+            })
+          }
+        }
+      );
+
+      expect(result[topSelector]).toMatchObject({
+        'font-family': 'yay font',
+        'color': 'dodgerblue',
+        'background': 'purple',
+        'text-decoration': 'underline'
+      });
+    });
+
+    it('still supports the deprecated inline pattern matching', () => {
+      const result = parseRulesNoDebug(
+        topSelector,
+        { mode: 'hi there', nextOne: 'dodgerblue' },
+        {
+          background: {
+            mode: (value) => value === 'supersayan' && 'yellow',
+            nextOne: value => `value:${value}`,
+            default: 'orange'
+          },
+          fontFamily: 'deprecated-font',
+          '__match': {
+            mode: {
+              fontFamily: 'yay font',
+              color: 'green',
+              textDecoration: 'underline'
+            },
+            nextOne: value => ({
+              color: value
+            })
+          }
+        }
+      );
+
+      expect(result[topSelector]).toMatchObject({
+        'font-family': 'yay font',
+        'color': 'dodgerblue',
+        'background': 'value:dodgerblue',
+        'text-decoration': 'underline'
+      });
+    });
   })
 })
 
-describe('parseAndStringify', () => {
+describe('stringifyRules', () => {
   it('should not fail spectacularly', () => {
     const fakeGeneratedClass = 'lol-what-1234';
     const fakeProps = { mode: 'something', nextOne: 'hello' };
 
     const result = parseAndStringify(fakeGeneratedClass, fakeProps, {
       fontSize: '10px',
+      [mq('screen').from(500)]: {
+        fakeAttribute: 'whats-up'
+      },
       color: {
         mode: (value) => value + '-alright',
         kittensEverywhere: 'purple'
       },
+      [style.prop.mode]: (value) => ({
+        background: `${value}-alright`,
+        [style.hover]: {
+          background: 'red'
+        }
+      }),
+      [style.prop.kittensEverywhere]: {
+        background: 'purple'
+      },
+      [style.hover]: {
+        textDecoration: 'underline'
+      },
+      [style.or(style.hover, style.focus)]: {
+        [style.or(style.active, style.visited)]: {
+          fontFamily: 'whatever',
+          [style.or(style.before, style.after)]: {
+            fontWeight: 'super-ultra-bold',
+            [mq('screen').from(500)]: {
+              fontFamily: 'helvetica-is-trendy'
+            },
+          }
+        }
+      },
       fontWeight: 'normal'
     });
 
+    const hoverFocusActiveVisited = [
+      ':hover:active',
+      ':focus:active',
+      ':hover:visited',
+      ':focus:visited',
+    ].map((value) => `${fakeGeneratedClass}${value}`).join(',')
+
+    const hoverFocusActiveVisitedBeforeAfter = [
+      ':hover:active::before',
+      ':focus:active::before',
+      ':hover:visited::before',
+      ':focus:visited::before',
+      ':hover:active::after',
+      ':focus:active::after',
+      ':hover:visited::after',
+      ':focus:visited::after'
+    ].map((value) => `${fakeGeneratedClass}${value}`).join(',')
+
+
     expect(result).toEqual([
-      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;font-weight: normal; }`
+      `${hoverFocusActiveVisitedBeforeAfter} { font-weight: super-ultra-bold; }`,
+      `@media screen and (min-width:500px) { ${hoverFocusActiveVisitedBeforeAfter} { font-family: helvetica-is-trendy; } }`,
+      `@media screen and (min-width:500px) { ${fakeGeneratedClass} { fake-attribute: whats-up; } }`,
+      `${hoverFocusActiveVisited} { font-family: whatever; }`,
+      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;background: something-alright;font-weight: normal; }`,
+      `${fakeGeneratedClass}:hover { background: red; }`,
+      `${fakeGeneratedClass}:hover { text-decoration: underline; }`
     ])
   });
-
 });

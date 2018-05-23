@@ -2,7 +2,7 @@ import React from 'react';
 import { mount, render } from 'enzyme';
 
 import shades, { Shades } from './with-react';
-import { states, mq } from './helpers';
+import { states, mq, style } from './helpers';
 
 describe('Shades DOM', () => {
   const mountShades = (data) => mount(
@@ -34,21 +34,13 @@ describe('Shades DOM', () => {
 
     expect(titleSubject).toMatchSnapshot();
   });
+
   it('renders a block matcher without incident', () => {
     const Linky = shades.a({
       background: 'purple',
       fontWeight: {
         dark: 600,
         light: 200
-      }
-    }).match({
-      dark: {
-        color: 'white',
-        background: 'green'
-      },
-      light: {
-        color: 'purple',
-        background: 'white'
       }
     });
 
@@ -67,27 +59,61 @@ describe('Shades DOM', () => {
 
   it('Forwards valid DOM props', () => {
     const Linky = shades.a({
-      backgroundColor: {
-        dark: 'blue',
-        light: 'green',
-        default: 'pink'
+      color: 'pink',
+      [style.prop.dark]: {
+        color: 'blue',
+        fontWeight: 600
       },
-      fontWeight: {
-        dark: 600,
-        light: 200
+      [style.prop.light]: {
+        color: 'green',
+        fontWeight: 200
       },
-      color: 'black'
+      [style.or(style.hover, style.active)]: (allProps) => ({
+        [style.prop.amazing]: amazing => amazing === allProps.amazing && ({
+          color: 'hooray'
+        })
+      }),
+      [style.props.all(style.prop.specialThing, style.prop.fantastic)]: {
+        [style.element.before]: {
+          content: 'hi there'
+        }
+      }
+    }).match({
+      dark: {
+        color: 'blue'
+      }
     });
 
     const subject = mountShades(
       <Linky href="hello.html" superDark="yeah" data-testing="just a test" aria-label="hello">Hello</Linky>
     );
 
-    const anchorItem = subject.find('a');;
+    const anchorItem = subject.find('a');
 
     expect(anchorItem).toHaveProp('href', 'hello.html');
     expect(anchorItem).toHaveProp('data-testing', 'just a test');
     expect(anchorItem).toHaveProp('aria-label', 'hello');
     expect(anchorItem).not.toHaveProp('superDark');
   });
+
+  it('should write the expected styles to the stylesheet', () => {
+    const Linky = shades.a({
+      background: 'purple',
+      fontWeight: {
+        dark: 600,
+        light: 200
+      }
+    });
+
+    const darkSubject = mountShades(
+      <Linky dark>Hello</Linky>
+    );
+
+    console.log(document.querySelectorAll('style[data-shades]'));
+
+    const styleSheetContents = [...document.querySelector('style[data-shades]').sheet.cssRules].map(item => item.cssText).join('\n\n');
+
+    console.log(styleSheetContents)
+  });
+
 });

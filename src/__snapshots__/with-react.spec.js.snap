@@ -36,7 +36,7 @@ exports[`Shades DOM Renders without incident 1`] = `
           }
         >
           <h1
-            className="shades-1-0a5820ffa310da513618d2a4f400ba05be7c12cb"
+            className="shades-h1-229e27bf4f232311c23181b9c2eaf3fb287c58f6"
           >
             Hello
           </h1>
@@ -83,7 +83,7 @@ exports[`Shades DOM renders a block matcher without incident 1`] = `
           }
         >
           <a
-            className="shades-3-0a5820ffa310da513618d2a4f400ba05be7c12cb"
+            className="shades-a-2e5a42365d82c7afb910df11f4f4a210fd7b6a61"
           >
             Hello
           </a>
@@ -125,7 +125,7 @@ exports[`Shades DOM renders a block matcher without incident 2`] = `
           }
         >
           <a
-            className="shades-3-323217f643c3e3f1fe7532e72ac01bb0748c97be"
+            className="shades-a-04e364fd62e2ed558a4f6cf657ba7f4287a09c02"
           >
             No Props!
           </a>

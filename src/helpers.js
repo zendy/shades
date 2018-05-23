@@ -13,17 +13,19 @@ import {
   dasherize,
   isString,
   isNumber,
-  when
+  when,
+  msg
 } from './utilities';
 
 import mq from './helpers/mq';
+import style from './helpers/style';
 
 export const states = do {
   const normalFn = (selectors) => {
     return Object.entries(selectors).reduce((result, [key, value]) => ({
       ...result,
       [`:${dasherize(key)}`]: value
-    }), {})
+    }), {});
   }
 
   normalFn.all = (...selectors) => (styleRules) => selectors |> reduce((result, currentSelector) => ({
@@ -31,9 +33,10 @@ export const states = do {
     [`:${dasherize(currentSelector)}`]: styleRules
   }), {});
 
-  normalFn;
+  msg().deprecated('states', normalFn);
 }
 
 export {
-  mq
+  mq,
+  style
 }

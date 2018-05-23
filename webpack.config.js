@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const path = require('path');
 
@@ -9,8 +10,23 @@ const moduleRule = (target, loader) => ({
   }
 });
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+
+const isTest = nodeEnv === 'test';
+const isProduction = nodeEnv === 'production';
+const isDevelopment = !isProduction && !isTest;
+
+const developmentConfig = isDevelopment && {
+  mode: 'development',
+  devtool: 'source-map'
+}
+
+const environmentConfig = developmentConfig || {
+  mode: 'production'
+};
+
 module.exports = {
-  mode: 'production',
+  ...environmentConfig,
   entry: {
     lib: './src/shades.js',
     react: './src/with-react.js',
@@ -23,7 +39,8 @@ module.exports = {
     libraryTarget: 'umd'
   },
   externals: [nodeExternals({
-    modulesFromFile: true
+    modulesFromFile: true,
+    whitelist: (value) => value.includes('@babel')
   })],
   module: {
     rules: [

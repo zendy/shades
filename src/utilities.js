@@ -29,7 +29,9 @@ import {
    either,
    mergeWith,
    concat,
-   toPairs
+   toPairs,
+   fromPairs,
+   filter
 } from 'ramda';
 
 const UPPERCASE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' >> split('');
@@ -43,13 +45,13 @@ export const isType = curry(
   (expected, value) => toLower(type(value)) === toLower(expected)
 );
 
-const isFalsy = (value) => !value;
+export const isFalsy = (value) => !value;
 
 export const reduceWhileFalsy = curry(
   (handlerFn, list) => reduceWhile(isFalsy, handlerFn, false, list)
 );
 
-export const reduceRecord = (handlerFn, initialValue = {}) => (original) => (
+export const reduceRecord = (initialValue) => (handlerFn) => (original) => (
   original |>
   toPairs |>
   reduce(
@@ -98,8 +100,6 @@ export const includes = curry(
 
 export const noop      = ()       => {};
 export const id        = (value)  => value;
-export const every     = (...fns) => (...args) => allPass(fns)(...args);
-// export const either    = (...fns) => (...args) => reduceWhileFalsy((result, item) => item(...args), fns);
 export const firstItem = nth(0);
 
 export const isArray            = isType('array');
@@ -107,6 +107,8 @@ export const isString           = isType('string');
 export const isFunction         = isType('function');
 export const isObjectLiteral    = isType('object');
 export const isNumber           = isType('number');
+export const isSymbol           = isType('symbol');
+export const isMap              = isType('map');
 
 export const isDefined          = complement(isNil);
 export const isNotDefined       = isNil;
@@ -128,7 +130,9 @@ export const getSubstringAfter  = (start)      => getSubstring(start);
 export const startsWithAny      = (...searchStrs) => searchStrs >> map(startsWith) >> anyPass
 export const combineStrings     = (...inputs) => inputs.filter(Boolean).join('');
 
-export const safeJoinWith = (separator) => (...items) => items.filter(Boolean).join(separator);
+export const safeJoinWith = (separator) => (...args) => (
+  args |> when(firstItem, isArray).then(firstItem) |> filter(Boolean) |> join(separator)
+)
 
 export const joinString = (first, ...items) => {
   if (first >> isArray) return first >> join('');
@@ -186,6 +190,50 @@ export const valueAsFunction = value => {
   return value;
 };
 
+export const proxyPropertyGetter = (genericHandler) => (
+  new Proxy({}, {
+    get: (target, name) => (
+      Reflect.get(target, name) ?? genericHandler(name)
+    )
+  })
+);
+
+export const proxyRecord = (handlers) => (originalRecord) => (
+  new Proxy(originalRecord, {
+    get: (target, name) => (
+      Reflect.get(target, name) ?? handlers[name]
+    )
+  })
+)
+
+export const proxyFunction = (callHandler, chainHandlers) => {
+  const outerProxy = new Proxy(callHandler, {
+    get: (target, name) =>  chainHandlers?.[name] ?? Reflect.get(target, name)
+  });
+
+  return outerProxy;
+};
+
+export const proxyFunctionWithPropertyHandler = (functionHandler, propertyHandler) => (
+  new Proxy(genericHandler, {
+    get: (target, name) => {
+      const output = genericHandler(name) ?? Reflect.get(target, name)
+      return output
+    }
+  })
+)
+
+export const proxyPassthroughFunction = (beforePassthrough) => (originalFn) => new Proxy(originalFn, {
+  get: (target, name) => {
+    if (Reflect.has(target, name)) beforePassthrough(name);
+    return Reflect.get(target, name);
+  },
+  apply: (target, context, givenArgs) => {
+    beforePassthrough();
+    return Reflect.apply(target, context, givenArgs);
+  }
+});
+
 // Conditional chain expression :) stop using if & else, just use this.
 // Usage: ```
 // const actuallyDoTheThing = (value) => value + " is more than nothing";
@@ -194,44 +242,39 @@ export const valueAsFunction = value => {
 // doSomething("something"); // "something is more than nothing"
 // doSomething("not something") // => "I dunno what 'not something' is. sorry!"
 // ```
-export const when = (predicate) => ({
-  // If predicate doesnt retun a truthy value, then just return the first
-  // argument given to the whole expression
-  onlyThen: (...truthyHandlers) => (first, ...args) => {
-    const callablePredicate = valueAsFunction(predicate);
-    const combined = [first, ...args];
+const convertAndPipe = (values) => {
+  const callableValues = values |> map(valueAsFunction);
+  return pipe(...callableValues);
+}
 
-    if (callablePredicate(...combined)) {
-      return pipe(...truthyHandlers)(...combined);
+export const when = (...predicates) => {
+  const evaluateWith = (handleTruthy = [id]) => (handleFalsy = [id]) => (...args) => {
+    const predicateChain  = predicates   |> convertAndPipe;
+    const truthyChain     = handleTruthy |> convertAndPipe;
+    const falsyChain      = handleFalsy  |> convertAndPipe;
+
+    if (predicateChain(...args)) {
+      return truthyChain(...args);
     }
 
-    return first;
-  },
-  then: (...truthyHandlers) => ({
+    return falsyChain(...args);
+  }
 
-    orNot: () => (first, ...args) => {
-      const callablePredicate = valueAsFunction(predicate);
-      const combined = [first, ...args];
-
-      if (callablePredicate(...combined)) {
-        return pipe(...truthyHandlers)(...combined);
-      }
-
-      return first;
-    },
-    // If the predicate returns truthy, call handleTruthy with the
-    // last set of arguments, otherwise call handleFalsy
-    otherwise: (...falsyHandlers) => (...args) => {
-      const callablePredicate = valueAsFunction(predicate);
-
-      if (callablePredicate(...args)) {
-        return pipe(...truthyHandlers.map(valueAsFunction))(...args);
-      }
-
-      return pipe(...falsyHandlers.map(valueAsFunction))(...args);
-    }
+  return ({
+    // If predicate doesnt retun a truthy value, then just return the first
+    // argument given to the whole expression
+    onlyThen: (...truthyHandlers) => evaluateWith(truthyHandlers)(),
+    then: (...truthyHandlers) => proxyFunction(evaluateWith(truthyHandlers)(), {
+      // If the predicate returns truthy, call handleTruthy with the
+      // last set of arguments, otherwise call handleFalsy
+      otherwise: (...falsyHandlers) => evaluateWith(truthyHandlers)(falsyHandlers)
+    }),
+    otherwise: (...falsyHandlers) => evaluateWith()(falsyHandlers)
   })
-});
+};
+
+// Type stuff
+export const is = proxyPropertyGetter
 
 export const dotPath = curry(
   (pathStr, target) => target >> path(pathStr >> split('.'))
@@ -260,21 +303,20 @@ export const betterSet = (initialData = []) => {
 
 export const stateful = (initialValue, actions) => {
   let _internalState = initialValue;
-  const reducers = Object.entries(actions).reduce((result, [name, fn]) => ({
+  const reducers = Object.entries(actions).reduce((result, [name, actionFn]) => ({
     ...result,
     [name]: (...args) => {
-      const actionResult = actions[name](_internalState, ...args);
+      const actionResult = actionFn(_internalState, ...args);
 
       if (isObjectLiteral(_internalState)) {
         const nextState = {
           ..._internalState,
           ...actionResult
         }
-        _internalState = nextState;
+
         return nextState;
       }
 
-      _internalState = actionResult;
       return actionResult;
     }
   }), {});
@@ -287,13 +329,17 @@ export const stateful = (initialValue, actions) => {
 
       return clonedState;
     }
+    else if (isMap(_internalState) || _internalState?.get) {
+      if (path) return _internalState.get(path);
+      return _internalState;
+    }
 
     return _internalState;
   };
 
   const innerSelf = {
     lift: (handler) => {
-      handler(reducers, getState);
+      _internalState = handler(reducers, getState) ?? _internalState;
       return innerSelf;
     },
     getState
@@ -302,22 +348,51 @@ export const stateful = (initialValue, actions) => {
   return innerSelf;
 }
 
-const logMagenta = (...values) => tiza.bold().color('magenta')        .text(values.join(' ')).reset();
-const logBlue    = (...values) => tiza.bold().color('cornflowerblue') .text(values.join(' ')).reset();
-const logPurple  = (...values) => tiza.bold().color('mediumorchid')   .text(values.join(' ')).reset()
-const logOrange  = (...values) => tiza.bold().color('darkorange')     .text(values.join(' ')).reset();
+const joinArgs = (originalFn) => (...items) => items |> join(' ') |> originalFn;
 
-const logError   = () => tiza.bold().color('darkorange').text('Error: ').reset();
-const logWarning = () => tiza.bold().color('mediumorchid').text('Warning: ').reset();
-const logInfo    = () => tiza.bold().text('Info: ').reset();
+const logColours = (
+  {
+    green:   '#54d267',
+    red:     '#ca1e39',
+    orange:  '#ea821f',
+    magenta: '#ff6dfd',
+    purple:  '#b06dff',
+    blue:    '#60a3ff',
+    gray:    '#c2c2c2'
+  } |> toPairs |> map(([colourName, colourHex]) => ([
+    colourName,
+    tiza.bold().color(colourHex).text
+  ])) |> fromPairs
+);
 
-const shadesLog = (displayName = 'Shades') => {
-  const logger = logBlue('<' + displayName + '> ');
+export const shadesLog = (displayName = 'Shades') => {
+  const isProduction = process?.env?.NODE_ENV === 'production';
+  const shouldShowDebug = !isProduction;
+
+  const makeLogTitle = (original) => logColours.gray('<', original |> logColours.blue, '> ');
+  const logTitle = logColours.gray(`<${displayName |> logColours.blue}> `)
 
   return {
-    error:   (...data) => logger.log(logError(), data.join(' ')),
-    warning: (...data) => logger.log(logWarning(), data.join(' ')),
-    info:    (...data) => logger.log(logError(), data.join(' '))
+    error:   (...data) => logTitle.log(
+      'Error:' |> logColours.red,
+      ...data
+    ),
+    warning: (...data) => shouldShowDebug && logTitle.log(
+      'Warning: ' |> logColours.orange,
+      ...data
+    ),
+    info:    (...data) => shouldShowDebug && logTitle.log(
+      'Info: ' |> logColours.blue,
+      ...data
+    ),
+    deprecated: (originalName, originalFn) => originalFn |> when(shouldShowDebug).then(
+      proxyPassthroughFunction((propertyName) => (
+        makeLogTitle(displayName).log(
+          logColours.orange('Deprecation warning: '),
+          logColours.purple(originalName), ' is deprecated.  Please check the documentation for more details.'
+        )
+      ))
+    )
   }
 }
 
@@ -325,23 +400,25 @@ const runIfEnabled = (toggleSwitch) => (callbackFn) => (...args) => {
   if (toggleSwitch) return callbackFn(...args);
 }
 
-export const getLoggers = ({ showDebug, displayName }) => {
-  const runner = runIfEnabled(showDebug);
+export const getLoggers = ({ debug, displayName }) => {
+  const runner = runIfEnabled(debug);
   const logger = shadesLog(displayName);
 
   return ({
-    magenta: logMagenta,
-    blue:    logBlue,
-    purple:  logPurple,
-    orange:  logOrange,
-    matchNotFound: runner(({ ruleName }) => (
-      logger.info('No pattern for ', logMagenta(ruleName), ' was matched, and no default was specified.'))
-    ),
+    ...logColours,
     error:   logger.error, // Errors should be displayed always
     warning: runner(logger.warning),
     info:    runner(logger.info)
   });
 }
+
+export const msg = (enabled = false) => ({
+  deprecated: (titleText, originalFn) => originalFn |> proxyPassthroughFunction((propertyName) => {
+    const displayTitle = safeJoinWith('.')(titleText, propertyName);
+    const logger = shadesLog(`Shades#${displayTitle}`);
+    logger.warning('This method is deprecated.  Please check the documentation for details.');
+  })
+})
 
 export const element = (name, view) => {
   if (view) return register(name, component(view));
