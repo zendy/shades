@@ -2,11 +2,15 @@ import React        from 'react';
 import htmlTagNames from 'html-tag-names'
 import PropTypes    from 'prop-types';
 import shouldForwardProperty from './should-forward-prop';
+import objectHash from 'object-hash';
 
 import {
   curry,
   compose,
-  pickBy
+  pickBy,
+  prop,
+  either,
+  concat
 } from 'ramda';
 
 import {
@@ -22,11 +26,14 @@ import { css, generateClassName } from './style-parser';
 
 import {
   safeJoinWith,
-  shadesLog
+  shadesLog,
+  proxyFunctionWithPropertyHandler,
+  when,
+  isString
 } from './utilities';
 
 const wrapReactName = curry(
-  (wrapperName, Component) => setDisplayName(wrapDisplayName(Component, wrapperName))
+  (wrapperName, Component) => wrapDisplayName(Component, wrapperName) |> setDisplayName
 );
 
 const joinWithSpace = safeJoinWith(' ');
@@ -43,7 +50,7 @@ const joinWithSpace = safeJoinWith(' ');
  * </Shades>
  */
 export const Shades = compose(
-  setDisplayName('Shades'),
+  setDisplayName('Shades.Provider'),
   setPropTypes({
     to: PropTypes.object.isRequired,
     showDebug: PropTypes.bool
@@ -59,23 +66,31 @@ const applyShadeContext = (original) => original >> getContext({
   showDebug: PropTypes.bool
 }) >> pure;
 
+const shadesElementClassName = '__shades-element';
+const badConfigMsg    = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
+const isShades        = prop('__isShadesElement');
+const getShadesStyles = prop('__shadesStyles');
+
 const prettyComponentFactory = curry(
   (tagName, styleRules) => {
-    const baseClassName = `shades-${tagName}`;
-    const prettyDisplayName = `shades.${tagName}`;
-    const logger = shadesLog(prettyDisplayName);
+    const componentOrTagName = tagName |> when(isString).otherwise(
+      objectHash.MD5
+    );
 
-    const prettyElement = applyShadeContext << setDisplayName(prettyDisplayName) << (
+    const baseClassName     = componentOrTagName |> concat('shades-');
+    const prettyDisplayName = componentOrTagName |> concat('shades.');
+    const logger            = shadesLog(prettyDisplayName);
+
+    const prettyElement = (
       ({ targetDom, showDebug, children, className, ...props }) => {
         if (!targetDom) {
-          const badConfigMsg = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
           logger.error(badConfigMsg);
           throw new Error(
             badConfigMsg
           );
         }
 
-        const fullClassName = css(
+        const computedStyleClassName = css(
           {
             className: baseClassName,
             target: targetDom,
@@ -89,16 +104,27 @@ const prettyComponentFactory = curry(
         const propsToForward = props >> pickBy((val, key) => shouldForwardProperty(tagName, key));
 
         return React.createElement(tagName, {
-          className: joinWithSpace(fullClassName, className),
+          className: joinWithSpace(shadesElementClassName, computedStyleClassName, className),
           ...propsToForward
         }, children);
       }
     )
-
-    prettyElement.match = logger.deprecated('.match', (matcherRules) => prettyComponentFactory(tagName, {
-      ...styleRules,
-      '__match': matcherRules
-    }));
+    |> setDisplayName(prettyDisplayName)
+    |> applyShadeContext
+    |> proxyFunctionWithPropertyHandler({
+      match: logger.deprecated('.match', (matcherRules) => prettyComponentFactory(tagName, {
+        ...styleRules,
+        '__match': matcherRules
+      })),
+      extend: (additionalRules) => prettyComponentFactory(tagName, {
+        ...styleRules,
+        ...(
+          additionalRules |> when(isShades).then(getShadesStyles)
+        )
+      }),
+      __isShadesElement: true,
+      __shadesStyles: styleRules
+    });
 
     return prettyElement;
   }
@@ -111,6 +137,6 @@ const withComponent = curry(
 const domHelpers = htmlTagNames.reduce((result, tag) => ({
   ...result,
   [tag]: prettyComponentFactory(tag)
-}), { withComponent });
+}), { withComponent, Provider: Shades });
 
 export default domHelpers;

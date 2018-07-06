@@ -59,7 +59,8 @@ import {
   type
 } from 'ramda';
 
-import { getDescriptor, KINDS } from './helpers/style';
+import { getDescriptor } from './helpers/style';
+import { COMBINATORS } from './helpers/selector-types';
 
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
 const asPseudoElement  = (key) => `::${dasherize(key)}`;
@@ -301,6 +302,11 @@ const parseStyleMetaData = (ruleResponder) => {
   return styleParser;
 }
 
+const functionRulesCallWith = (argsToPass) => (parseFn) => (key, value) => {
+  const actualValue = value |> whenFunctionCallWith(argsToPass);
+  return parseFn(key, actualValue);
+}
+
 export const parseAllStyles = parseStyleMetaData({
   atRule: ({ parentSelector, addAtRule, asNewParser }) => (key, value) => (
     addAtRule(
@@ -312,10 +318,12 @@ export const parseAllStyles = parseStyleMetaData({
     const newSelectors = extendSelector(extraSelector);
     return extraRules |> parseNested(newSelectors)
   },
-  pseudoElement: ({ pseudoElementSelector, parseNested }) => (pseudoName, nestedRules) => {
-    const newSelectors = pseudoElementSelector(pseudoName);
-    return nestedRules |> parseNested(newSelectors)
-  },
+  pseudoElement: ({ pseudoElementSelector, parseNested }) => parserLog.deprecated('Pseudo-element key names', (
+    (pseudoName, nestedRules) => {
+      const newSelectors = pseudoElementSelector(pseudoName);
+      return nestedRules |> parseNested(newSelectors)
+    }
+  )),
   blockPattern: ({ parseNestedWithResult, props, results, parentSelector }) => (unneededKey, propsToMatch) => (
     propsToMatch |> toPairs |> reduce((accumulated, [propName, rulesForProp]) => {
       if (props |> has(propName)) return (
@@ -352,32 +360,27 @@ export const parseAllStyles = parseStyleMetaData({
   },
   styleSymbol: ({ extendSelector, props, parseNested, parentSelector, propExists }) => (
     (symbolKey, styleBlock) => {
-      const parseStyleBlockWith = (argsToPass) => (selector) => (
+      const parseStyleBlockWith = (selector) => (
         styleBlock
-        |> whenFunctionCallWith(argsToPass)
         |> parseNested(selector)
       );
 
       const handlers = {
-        [KINDS.PROPERTY_OR]: (targetProps) => {
+        [COMBINATORS.PROPERTY_OR]: (targetProps) => {
           if (targetProps |> find(propExists)) return (
-            parentSelector |> parseStyleBlockWith(props)
+            styleBlock |> parseNested(parentSelector)
           )
         },
-        [KINDS.PROPERTY_AND]: (targetProps) => {
+        [COMBINATORS.PROPERTY_AND]: (targetProps) => {
           if (targetProps |> all(propExists)) return (
-            parentSelector |> parseStyleBlockWith(props)
+            styleBlock |> parseNested(parentSelector)
           )
         },
-        [KINDS.COMBINATOR_OR]: (targetAttrs) => (
-          targetAttrs |> chain(extendSelector) |> (
-            parseStyleBlockWith(props)
-          )
+        [COMBINATORS.COMBINATOR_OR]: (targetAttrs) => (
+          styleBlock |> parseNested(targetAttrs |> chain(extendSelector))
         ),
-        [KINDS.COMBINATOR_AND]: (targetAttrs) => (
-          targetAttrs |> join('') |> extendSelector |> (
-            parseStyleBlockWith(props)
-          )
+        [COMBINATORS.COMBINATOR_AND]: (targetAttrs) => (
+          styleBlock |> parseNested(targetAttrs |> join('') |> extendSelector)
         )
       }
 
@@ -386,26 +389,28 @@ export const parseAllStyles = parseStyleMetaData({
       return handlers?.[kind]?.(value);
     }
   ),
-  style: ({ addStyle, props, reevaluate }) => (ruleName, value) => (
-    value
-    |> whenFunctionCallWith(props)
-    |> when(isUndefinedOrFalse).otherwise(
-      when(isObjectLiteral).then(
-        // For cases when the function returns an inline pattern
-        reevaluate(ruleName)
-      ).otherwise(
-        when(isArray).then(join(', ')),
-        when(isNumber).then(toString),
-        when(isString).then(
-          wrapContentString(ruleName),
-          addStyle(ruleName)
+  // fontFace: () => (ruleName, value) =>
+  style: ({ addStyle, props, reevaluate }) => functionRulesCallWith(props)(
+    (ruleName, value) => (
+      value
+      |> when(isUndefinedOrFalse).otherwise(
+        when(isObjectLiteral).then(
+          // For cases when the function returns an inline pattern
+          reevaluate(ruleName)
         ).otherwise(
-          stopRightThereCriminalScum([
-            'Object',
-            'Array',
-            'Number',
-            'String'
-          ], ruleName)
+          when(isArray).then(join(', ')),
+          when(isNumber).then(toString),
+          when(isString).then(
+            wrapContentString(ruleName),
+            addStyle(ruleName)
+          ).otherwise(
+            stopRightThereCriminalScum([
+              'Object',
+              'Array',
+              'Number',
+              'String'
+            ], ruleName)
+          )
         )
       )
     )

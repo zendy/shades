@@ -4,7 +4,10 @@ import {
   concat,
   join,
   curry,
-  prop
+  prop,
+  propEq,
+  equals,
+  mapObjIndexed
 } from 'ramda';
 
 import {
@@ -12,6 +15,7 @@ import {
   isString,
   isSymbol,
   isNumber,
+  isArray,
   isDefined,
   when,
   betterSet,
@@ -19,89 +23,21 @@ import {
   stateful,
   proxyFunction,
   proxyPropertyGetter,
-  proxyRecord
+  proxyRecord,
+  anyOf,
+  allOf,
+  firstItem,
+  lastItem
 } from '../utilities';
 
-const pseudoElementNames = [
-  'before',
-  'after',
-  'backdrop',
-  'cue',
-  'firstLetter',
-  'firstLine',
-  'grammarError',
-  'placeholder',
-  'selection',
-  'spellingError'
-];
-
-const pseudoFunctionNames = [
-  'any',
-  'dir',
-  'lang',
-  'matches',
-  'not',
-  'nthChild',
-  'nthLastChild',
-  'nthLastOfType',
-  'nthOfType'
-];
-
-const pseudoClassNames = [
-  'active',
-  'anyLink',
-  'checked',
-  'default',
-  'defined',
-  'disabled',
-  'empty',
-  'enabled',
-  'first',
-  'firstChild',
-  'firstOfType',
-  'fullscreen',
-  'focus',
-  'focusWithin',
-  'hover',
-  'indeterminate',
-  'inRange',
-  'invalid',
-  'lastChild',
-  'lastOfType',
-  'left',
-  'link',
-  'onlyChild',
-  'onlyOfType',
-  'optional',
-  'outOfRange',
-  'placeholderShown',
-  'readOnly',
-  'readWrite',
-  'required',
-  'right',
-  'root',
-  'scope',
-  'target',
-  'valid',
-  'visited'
-];
-
-export const KINDS = {
-  COMBINATOR_AND: 'combinator.and',
-  COMBINATOR_OR:  'combinator.or',
-  PROPERTY_AND:   'property.and',
-  PROPERTY_OR:    'property.or'
-};
-
-const COMBINATOR_INSERTS = {
-  [KINDS.COMBINATOR_AND]: '&&',
-  [KINDS.PROPERTY_AND]:   '&&',
-  [KINDS.COMBINATOR_OR]:  '||',
-  [KINDS.PROPERTY_OR]:    '||'
-}
+import {
+  PSEUDO_SELECTORS,
+  COMBINATORS,
+  COMBINATOR_INSERTS
+} from './selector-types'
 
 const isDescriptorSym    = Symbol('Compute Selector');
-const isDescriptor = (value) => value?.[isDescriptorSym] ?? false;
+const isDescriptor       = (value) => value?.[isDescriptorSym] ?? false;
 
 const keyFromSymbol      = (...args) => Symbol.keyFor(...args);
 const symbolFromKey      = (...args) => Symbol.for(...args);
@@ -185,10 +121,10 @@ const createCombinator = (kind) => (...data) => {
 
 const pseudoCombinators = {
   and: createCombinator(
-    KINDS.COMBINATOR_AND
+    COMBINATORS.COMBINATOR_AND
   ),
   or:  createCombinator(
-    KINDS.COMBINATOR_OR
+    COMBINATORS.COMBINATOR_OR
   )
 };
 
@@ -224,23 +160,25 @@ const withAttribute = (givenName) => {
 }
 
 const pseudoClassHandler = (specialChains) => (targetName) => {
-  if (pseudoClassNames.includes(targetName)) return (
+  if (PSEUDO_SELECTORS.CLASSES.includes(targetName)) return (
     targetName |> asPseudoClass
   );
 
-  if (pseudoFunctionNames.includes(targetName)) return (
+  if (PSEUDO_SELECTORS.FUNCTIONS.includes(targetName)) return (
     compose(
       asPseudoFunction(targetName),
       descriptorToString
     )
   );
 
-  if (pseudoElementNames.includes(targetName)) return (
+  if (PSEUDO_SELECTORS.ELEMENTS.includes(targetName)) return (
     targetName |> asPseudoElement
   )
 
   return specialChains?.[targetName];
 }
+
+
 
 const style = (
   proxyPropertyGetter(
@@ -268,8 +206,8 @@ const style = (
         when(isString).then(asPropertySelector)
       ),
       props: ({
-        any: createCombinator(KINDS.PROPERTY_OR),
-        all: createCombinator(KINDS.PROPERTY_AND)
+        any: createCombinator(COMBINATORS.PROPERTY_OR),
+        all: createCombinator(COMBINATORS.PROPERTY_AND)
       })
     })
   )

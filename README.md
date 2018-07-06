@@ -6,9 +6,7 @@
 
 [![Build Status](https://travis-ci.org/bupa-digital/shades.svg?branch=master)](https://travis-ci.org/bupa-digital/shades)
 
-This is an experimental CSS-in-JS library, designed to be very similar to Glamorous, but supports rendering styles to shadow dom (or anywhere else you want, really)
-
-Updates coming continuously, as we finish up our final testing and bug fixing, in preparation for rolling out to Bupa web platforms.
+This is a CSS-in-JS library, designed to be very similar to Glamorous, but supports rendering styles to shadow dom (or anywhere else you want, really)
 
 ## Live REPL
 
@@ -36,7 +34,7 @@ Please ensure you install all the peer dependencies that are mentioned by yarn/n
 
 ### Examples Galore
 
-This assumes you're going to be using React.  There is an agnostic `css` function that you can also use, but it's somewhat verbose.  Documentation for it will be coming later on.
+This assumes you're going to be using React.  There is an agnostic `css` function that you can also use, but it's seriously verbose and not really recommended for use on its own just yet.  Documentation for it will be coming later on.
 
 `yarn add @bupa-digital/shades`
 
@@ -49,7 +47,7 @@ Here's an example of what a top level web component might look like:
 ```js
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Shades } from '@bupa-digital/shades/react';
+import shades from '@bupa-digital/shades/react';
 
 import CounterView from './CounterView';
 
@@ -78,9 +76,9 @@ customElements.define('counter-view', class extends HTMLElement {
     };
 
     ReactDOM.render(
-      <Shades to={shadowRoot}>
+      <shades.Provider to={shadowRoot}>
         <CounterView {...props} />
-      </Shades>
+      </shades.Provider>
     )
   }
 });
@@ -89,9 +87,9 @@ customElements.define('counter-view', class extends HTMLElement {
 If you want to have shades show you pretty log messages to tell you what it's doing, pass `showDebug={true}` to the Shades provider, like so:
 
 ```js
-<Shades to={shadowRoot} showDebug={true}>
+<shades.Provider to={shadowRoot} showDebug={true}>
   <CounterView {...props} />
-</Shades>
+</shades.Provider>
 ```
 
 (Remember to turn that off for production builds!)
@@ -103,7 +101,7 @@ And to use shades to style stuff, here's an example of most of its functionality
 ```js
 import React from 'react';
 import shades from '@bupa-digital/shades/react';
-import { states } from '@bupa-digital/shades/helpers';
+import { states, style } from '@bupa-digital/shades/helpers';
 
 const colours = {
   button: {
@@ -138,14 +136,15 @@ const SimpleBox = shades.div({
 
 // The above example is a basic CSS pseudo classes selector.
 // But since the selector is applying the same CSS property,
-// we can combine those pseudo classes using ...states.all
+// we can combine those pseudo classes using the style helper
 const SimpleBox = shades.div({
   padding: '10px',
   boxShadow: '3px 3px 3px #000',
   color: '#000',
-  ...states.all('hover', 'focus')({
+  // Equivalent to #someSelector:hover, #someSelector:focus
+  [style.or(style.hover, style.focus)]: {
     textDecoration: 'underline'
-  }),
+  },
   '::before': {
     content: 'hello there'
   }

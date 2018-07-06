@@ -25,6 +25,7 @@ import {
    flip,
    find,
    nth,
+   last,
    reduceWhile,
    either,
    mergeWith,
@@ -94,13 +95,17 @@ export const mapFilterRecord = (handlerFn, original) => (
   )
 );
 
-export const includes = curry(
-  (comparator, value) => value.includes(comparator)
-);
+export const includes = contains;
+
+export const includedIn = flip(contains);
+
+export const anyOf = (...predicates) => (valueToCheck) => anyPass(predicates, valueToCheck);
+export const allOf = (...predicates) => (valueToCheck) => allPass(predicates, valueToCheck);
 
 export const noop      = ()       => {};
 export const id        = (value)  => value;
 export const firstItem = nth(0);
+export const lastItem = last;
 
 export const isArray            = isType('array');
 export const isString           = isType('string');
@@ -214,13 +219,15 @@ export const proxyFunction = (callHandler, chainHandlers) => {
   return outerProxy;
 };
 
-export const proxyFunctionWithPropertyHandler = (functionHandler, propertyHandler) => (
-  new Proxy(genericHandler, {
-    get: (target, name) => {
-      const output = genericHandler(name) ?? Reflect.get(target, name)
-      return output
-    }
-  })
+export const proxyFunctionWithPropertyHandler = curry(
+  (propertyHandler, functionHandler) => (
+    new Proxy(functionHandler, {
+      get: (target, name) => {
+        const output = Reflect.get(target, name) ?? propertyHandler?.[name]
+        return output
+      }
+    })
+  )
 )
 
 export const proxyPassthroughFunction = (beforePassthrough) => (originalFn) => new Proxy(originalFn, {
@@ -272,9 +279,6 @@ export const when = (...predicates) => {
     otherwise: (...falsyHandlers) => evaluateWith()(falsyHandlers)
   })
 };
-
-// Type stuff
-export const is = proxyPropertyGetter
 
 export const dotPath = curry(
   (pathStr, target) => target >> path(pathStr >> split('.'))
@@ -365,10 +369,11 @@ const logColours = (
   ])) |> fromPairs
 );
 
-export const shadesLog = (displayName = 'Shades') => {
-  const isProduction = process?.env?.NODE_ENV === 'production';
-  const shouldShowDebug = !isProduction;
+const isProduction    = process?.env?.NODE_ENV === 'production';
+const isTest          = process?.env?.NODE_ENV === 'test';
+const shouldShowDebug = !isProduction && !isTest;
 
+export const shadesLog = (displayName = 'Shades') => {
   const makeLogTitle = (original) => logColours.gray('<', original |> logColours.blue, '> ');
   const logTitle = logColours.gray(`<${displayName |> logColours.blue}> `)
 
@@ -419,15 +424,3 @@ export const msg = (enabled = false) => ({
     logger.warning('This method is deprecated.  Please check the documentation for details.');
   })
 })
-
-export const element = (name, view) => {
-  if (view) return register(name, component(view));
-
-  const receiveComponentOrConfig = (original) => register(name, component(original));
-  // Just a silly hack to let me return a function *and* revealing modules
-  receiveComponentOrConfig.props = (...propNames) => (original) => (
-    register(name, component(original).watchProps(...propNames))
-  );
-
-  return receiveComponentOrConfig;
-}

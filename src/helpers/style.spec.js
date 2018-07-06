@@ -166,7 +166,87 @@ describe('style', () => {
           style.props.any(style.prop.specialItem, style.prop.thingamabob)
         ).toEqual('!!specialItem || !!thingamabob')
       });
-
+    });
+  });
+  describe.skip('Globals', () => {
+    describe('fontFace', () => {
+      it('should generate a font face style object that can be added lazily to a stylesheet', () => {
+        expect(
+          style.fontFace({
+            style: 'normal',
+            weight: 600,
+            src: [
+              ['local', 'Monserrat Semibold'],
+              ['local', 'Monserrat'],
+              ['woff', '/fonts/whatever.woff']
+            ]
+          })
+        ).toMatchObject({
+          fontFace: [
+            {
+              fontStyle: 'normal',
+              fontWeight: '600',
+              src: 'local("Monserrat Semibold"), local("Monserrat"), url(/fonts/whatever.woff) format("woff")'
+            }
+          ]
+        })
+      });
+      it('should allow a font family name to be specified', () => {
+        expect(
+          style.fontFace('Monserrat', {
+            style: 'normal',
+            weight: 600,
+            src: [
+              ['local', 'Monserrat Semibold'],
+              ['local', 'Monserrat'],
+              ['woff', '/fonts/whatever.woff']
+            ]
+          })
+        ).toMatchObject({
+          fontFace: [
+            {
+              fontFamily: 'Monserrat',
+              fontStyle: 'normal',
+              fontWeight: '600',
+              src: 'local("Monserrat Semibold"), local("Monserrat"), url(/fonts/whatever.woff) format("woff")'
+            }
+          ]
+        })
+      });
+      it('should allow multiple definitions in a single font face', () => {
+        expect(
+          style.fontFace({
+            style: 'normal',
+            weight: 600,
+            src: [
+              ['local', 'Monserrat Semibold'],
+              ['local', 'Monserrat'],
+              ['woff', '/fonts/whatever.woff']
+            ]
+          }, {
+            style: 'normal',
+            weight: 400,
+            src: [
+              ['local', 'Monserrat Regular'],
+              ['local', 'Monserrat'],
+              ['woff', '/fonts/whatever-regular.woff']
+            ]
+          })
+        ).toMatchObject({
+          fontFace: [
+            {
+              fontStyle: 'normal',
+              fontWeight: '600',
+              src: 'local("Monserrat Semibold"), local("Monserrat"), url(/fonts/whatever.woff) format("woff")'
+            },
+            {
+              fontStyle: 'normal',
+              fontWeight: '400',
+              src: 'local("Monserrat Regular"), local("Monserrat"), url(/fonts/whatever-regular.woff) format("woff")'
+            }
+          ]
+        })
+      });
     });
   });
 });
