@@ -101,7 +101,7 @@ And to use shades to style stuff, here's an example of most of its functionality
 ```js
 import React from 'react';
 import shades from '@bupa-digital/shades/react';
-import { states, style } from '@bupa-digital/shades/helpers';
+import { style } from '@bupa-digital/shades/helpers';
 
 const colours = {
   button: {
@@ -116,43 +116,49 @@ const colours = {
     light: '#000000'
   }
 }
+```
 
-// You can use just about any valid CSS with it (not sure about keyframes yet though)
+You can use just about any valid CSS with it (built in keyframe support and font-face coming soon)
+
+```js
 const SimpleBox = shades.div({
-  padding: '10px',
-  boxShadow: '3px 3px 3px #000',
-  color: '#000',
   ':hover': {
-    textDecoration: 'underline'
+    textDecoration: 'underline',
+    padding: '10px',
+    boxShadow: '3px 3px 3px #000',
+    color: '#000'
   },
   ':focus': {
-    textDecoration: 'underline'
+    textDecoration: 'underline',
+    padding: '10px',
+    boxShadow: '3px 3px 3px #000',
+    color: '#000'
   }
   '::before': {
     content: 'hello there'
   }
 });
+```
 
+The above example has the same style rules duplicated for :hover and :focus (since it uses just strings), but shades comes with a helper for pseudo-selectors and attribute-selectors (and even prop selectors!) which also gives you the ability to combine selectors like you would in CSS, but with a few enhancements as well.  Here's what the above example looks like with the style helper:
 
-// The above example is a basic CSS pseudo classes selector.
-// But since the selector is applying the same CSS property,
-// we can combine those pseudo classes using the style helper
+```js
 const SimpleBox = shades.div({
-  padding: '10px',
-  boxShadow: '3px 3px 3px #000',
-  color: '#000',
-  // Equivalent to #someSelector:hover, #someSelector:focus
   [style.or(style.hover, style.focus)]: {
-    textDecoration: 'underline'
+    textDecoration: 'underline',
+    padding: '10px',
+    boxShadow: '3px 3px 3px #000',
+    color: '#000'
   },
-  '::before': {
+  [style.element.before]: {
     content: 'hello there'
   }
 });
+```
 
-// Here we showcase a few magical features you can use in shades rules,
-// specifically, you can use functions that take props as rules,
-// and even do pattern matching on props!
+Here we showcase a few magical features you can use in shades rules, specifically, you can use functions that take props as rules, and even do pattern matching on props!
+
+```js
 const Button = shades.button({
   border: '1px solid',
   // Yes, all props passed to this component can be used in both patterns and in functions
@@ -184,13 +190,13 @@ const PseudoIcon = shades.i({
   // For pseudo-elements like `::before`, `::after`, `::first-letter`, etc
   // you can also use the style helper as an alternative to prefixing your
   // keys with '::'
-  [style.before]: {
+  [style.element.before]: {
     fontSize: '15px',
     content: 'Hello there!'
   },
   // And as expected, you can nest style helper keys however you like
   [style.hover]: {
-    [style.after]: {
+    [style.element.after]: {
       fontFamily: 'Material Icons',
       content: 'close'
     }

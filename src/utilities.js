@@ -114,6 +114,7 @@ export const isObjectLiteral    = isType('object');
 export const isNumber           = isType('number');
 export const isSymbol           = isType('symbol');
 export const isMap              = isType('map');
+export const isIterable = (original) => Reflect.has(original, Symbol.iterator);
 
 export const isDefined          = complement(isNil);
 export const isNotDefined       = isNil;
@@ -195,8 +196,8 @@ export const valueAsFunction = value => {
   return value;
 };
 
-export const proxyPropertyGetter = (genericHandler) => (
-  new Proxy({}, {
+export const proxyPropertyGetter = (genericHandler, originalValue = {}) => (
+  new Proxy(originalValue, {
     get: (target, name) => (
       Reflect.get(target, name) ?? genericHandler(name)
     )
@@ -341,13 +342,16 @@ export const stateful = (initialValue, actions) => {
     return _internalState;
   };
 
-  const innerSelf = {
-    lift: (handler) => {
-      _internalState = handler(reducers, getState) ?? _internalState;
-      return innerSelf;
-    },
-    getState
-  }
+  const innerSelf = proxyFunction(
+    _internalState,
+    {
+      lift: (handler) => {
+        _internalState = handler(reducers, getState) ?? _internalState;
+        return innerSelf;
+      },
+      getState
+    }
+  );
 
   return innerSelf;
 }

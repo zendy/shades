@@ -59,7 +59,7 @@ import {
   type
 } from 'ramda';
 
-import { getDescriptor } from './helpers/style';
+import { getDescriptor } from './helpers/style/selector-store';
 import { COMBINATORS } from './helpers/selector-types';
 
 const asPseudoSelector = (key) => `:${dasherize(key)}`;

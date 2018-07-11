@@ -63,11 +63,6 @@ describe('Shades DOM', () => {
       <Linky dark>Hello</Linky>
     );
 
-    // console.log(
-    //   // darkSubject.debug(),
-    //   duplicateSubject.debug()
-    // )
-
     expect(darkSubject).toMatchSnapshot();
 
     const noPropsSubject = mountShades(
@@ -77,6 +72,9 @@ describe('Shades DOM', () => {
     expect(noPropsSubject).toMatchSnapshot();
   });
 
+  // Skipped due to a bug with an Enzyme library (Function.prototype.name and is-callable)
+  // causing proxy-wrapped component constructors to throw an exception when attempting to
+  // use the find method, essentially saying that the component is not a function (when it is).
   it.skip('Forwards valid DOM props', () => {
     const Linky = shades.a({
       color: 'pink',

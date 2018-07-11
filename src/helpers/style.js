@@ -10,6 +10,8 @@ import {
   mapObjIndexed
 } from 'ramda';
 
+import styleStore, { getDescriptor } from './style/selector-store';
+
 import {
   dasherize,
   isString,
@@ -41,6 +43,7 @@ const isDescriptor       = (value) => value?.[isDescriptorSym] ?? false;
 
 const keyFromSymbol      = (...args) => Symbol.keyFor(...args);
 const symbolFromKey      = (...args) => Symbol.for(...args);
+const styleStoreKey = Symbol.for('Shades: styleStore');
 
 const asPseudoClass      = (name) => `:${name |> dasherize}`;
 const asPseudoElement    = (name) => `::${name |> dasherize}`;
@@ -49,15 +52,6 @@ const asPropertySelector = (givenName) => `!!${givenName}`;
 const asPseudoFunction = curry((name, value) => (
   `:${name |> dasherize}(${value})`
 ));
-
-const styleStore = stateful(
-  new Map(),
-  {
-    addItem: (store, itemKey, itemValue) => store.set(itemKey, itemValue)
-  }
-);
-
-export const getDescriptor = (key) => styleStore.getState(key);
 
 const storeDescriptor = (descriptorItem) => {
   const symbolKey = descriptorItem.symbolKey;
@@ -184,7 +178,7 @@ const style = (
   proxyPropertyGetter(
     pseudoClassHandler({
       ...pseudoCombinators,
-      element: asPseudoElement,
+      element: proxyPropertyGetter(asPseudoElement, asPseudoElement),
       pseudo: (name, value) => {
         if (isDefined(value)) return asPseudoFunction(name, value);
         return asPseudoClass(name);

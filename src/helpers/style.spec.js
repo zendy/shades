@@ -1,4 +1,5 @@
 import style, { parseStyleSymbol } from './style';
+import { getDescriptor } from './style/selector-store';
 
 const expectString = (original) => expect(original.toString());
 const expectSymbol = (original) => expect(
@@ -41,10 +42,10 @@ describe('style', () => {
 
   it('generates pseudo-elements from property getters', () => {
     expectString(
-      style.before
+      style.element.before
     ).toEqual('::before');
     expectString(
-      style.after
+      style.element.after
     ).toEqual('::after')
   });
 
@@ -67,6 +68,14 @@ describe('style', () => {
       style.and(style.hover, style.focus)
     ).toEqual(':hover && :focus');
   });
+  it('stores the descriptor that can be retrieved later', () => {
+    const result = getDescriptor(style.and(style.hover, style.focus));
+
+    expect(
+      result
+    ).toBeDefined();
+
+  })
   it('supports the or operator as a method', () => {
     expectSymbol(
       style.or(style.hover, style.visited)

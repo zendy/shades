@@ -123,7 +123,8 @@ const prettyComponentFactory = curry(
         )
       }),
       __isShadesElement: true,
-      __shadesStyles: styleRules
+      __shadesStyles: styleRules,
+      __prettyName: prettyDisplayName
     });
 
     return prettyElement;
