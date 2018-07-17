@@ -17,7 +17,6 @@ import {
   isNumber,
   isSymbol,
   joinString,
-  stateful,
   isUndefinedOrFalse,
   shadesLog,
   startsWithAny,
@@ -59,7 +58,12 @@ import {
   type
 } from 'ramda';
 
-import { getDescriptor } from './helpers/style/selector-store';
+import {
+  styleCache,
+  stylesheetRegistry
+} from './registries/stylesheet';
+
+import selectorRegistry from './registries/selectors';
 import { COMBINATORS } from './helpers/selector-types';
 
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
@@ -384,7 +388,7 @@ export const parseAllStyles = parseStyleMetaData({
         )
       }
 
-      const { kind, value } = getDescriptor(symbolKey);
+      const { kind, value } = selectorRegistry.getDescriptor(symbolKey);
 
       return handlers?.[kind]?.(value);
     }
@@ -417,7 +421,6 @@ export const parseAllStyles = parseStyleMetaData({
   )
 })
 
-
 /**
  * stringifyRules: takes an object where the key is the selector and the value
  * is the array of rules for that selector. Returns an array of CSS rule strings.
@@ -449,82 +452,22 @@ export const stringifyRules = (rules) => (
 
 const asClassName = unless(startsWith('.'), concat('.'));
 
-const createAndInsertStylesheet = (tagName, target, after) => {
-  const newElem = document.createElement(tagName);
-  if (after) after(newElem); // ewwwwww I'm so sorry
-  return target.appendChild(newElem);
-};
-
-const getSheetFor = (target) => {
-  const funnyName = 'data-shades';
-  const styleEl = (
-    target.querySelector(`[${funnyName}]`) ||
-    createAndInsertStylesheet(
-      'style',
-      target,
-      elem => elem.setAttribute(funnyName, true)
-    )
-  );
-
-  return styleEl.sheet;
-};
-
-const classNameWithProps = (baseClassName, props) => {
-  const propHash = objectHash(props);
-  return [baseClassName, propHash].join('-');
-}
-
 const computeClassnameHash = (...data) => objectHash(data);
-
-const appendRule = curry(
-  (target, rule) => {
-    const index = target.cssRules.length;
-    return target?.insertRule(rule, index) ?? target?.addRule(rule);
-  }
-);
-
-export const parseAndStringify = (value) => value;
-
-const shadeStore = stateful({
-  index: 1,
-  cached: new Map()
-}, {
-  increment: ({ index }) => ({ index: index + 1 }),
-  addToCache: ({ cached }, item) => ({ cached: cached.set(item, true) })
-});
-
-export const generateClassName = () => {
-  const currentIndex = shadeStore.getState('index');
-  const newClassName =  (
-    ['shades', currentIndex.toString(36)].join('-')
-  );
-
-  shadeStore.lift(({ increment }) => increment());
-
-  return newClassName;
-}
+const computeClassname = (className, ...data) => ([
+  className,
+  computeClassnameHash(className, ...data)
+]).join('-')
 
 export const css = ({ className, props = {}, target, showDebug, displayName }, styleRules) => {
-  const theSheet = getSheetFor(target);
-  const computedSelectorString = [
-    className,
-    computeClassnameHash(className, styleRules, props)
-  ].join('-');
+  const computedSelectorString = computeClassname(className, styleRules, props);
 
-  const isAlreadyCached = shadeStore.getState('cached').has(computedSelectorString);
-
-  if (isAlreadyCached) return computedSelectorString;
-
-  shadeStore.lift(({ addToCache }) => addToCache(computedSelectorString));
-
-  const styleString = (
+  const createRules = () => (
     styleRules
     |> parseAllStyles({ parentSelector: [computedSelectorString |> asClassName], props })
     |> stringifyRules
-    |> forEach(
-      appendRule(theSheet)
-    )
   );
 
-  return computedSelectorString;
+  return stylesheetRegistry.getSheetFor(target).insertStyles(
+    styleCache.add(computedSelectorString, createRules)
+  )
 }

@@ -1,8 +1,6 @@
-<img src="docs/media/sunglasses.svg" height="300px" alt="Shades icon">
-
-> Icon made by <a href="https://www.flaticon.com/authors/creaticca-creative-agency" title="Creaticca Creative Agency">Creaticca Creative Agency</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
-
 # Shades
+
+<img src="docs/media/sunglasses.svg" height="300px" alt="Shades icon, from www.flaticon.com">
 
 [![Build Status](https://travis-ci.org/bupa-digital/shades.svg?branch=master)](https://travis-ci.org/bupa-digital/shades)
 
@@ -11,6 +9,10 @@ This is a CSS-in-JS library, designed to be very similar to Glamorous, but suppo
 ## Live REPL
 
 If you want to try it out in a repl, [here's one I prepared earlier!](https://codesandbox.io/s/v3ypj97xz3)
+
+## Github Page
+
+Check out the Github page: https://bupa-digital.github.io/shades
 
 ## Helpers
 
@@ -32,13 +34,17 @@ Please ensure you install all the peer dependencies that are mentioned by yarn/n
 
 ## Usage
 
+### Installation
+
+`yarn add @bupa-digital/shades` (or `npm install --save @bupa-digital/shades`)
+
 ### Examples Galore
 
 This assumes you're going to be using React.  There is an agnostic `css` function that you can also use, but it's seriously verbose and not really recommended for use on its own just yet.  Documentation for it will be coming later on.
 
-`yarn add @bupa-digital/shades`
-
 The most important part of using Shades is the Shades provider - similar to Redux and other libraries, we use a Provider to supply a render target to all Shades elements that might be used inside the render tree.  This also means that you can have different Shades instances with different render targets for different shadow doms.
+
+#### With Shadow-Dom
 
 Here's an example of what a top level web component might look like:
 
@@ -94,7 +100,19 @@ If you want to have shades show you pretty log messages to tell you what it's do
 
 (Remember to turn that off for production builds!)
 
-And to use shades to style stuff, here's an example of most of its functionality:
+#### Without Shadow-Dom
+
+If you aren't using the shadow-dom, then your shades provider could look as simple as:
+
+```js
+<shades.Provider to={document.querySelector('body')}>
+  {/* the rest of your app goes here */}
+</shades.Provider>
+```
+
+#### Styling examples
+
+Here are examples of most of the functionality built-in to Shades:
 
 `components/CounterView.js`
 
@@ -282,3 +300,7 @@ You can also pass along `data` and `aria` attributes as you please!
   Click me!
 </Linky>
 ```
+
+## Attributions:
+
+The Icon used by Shades was made by <a href="https://www.flaticon.com/authors/creaticca-creative-agency" title="Creaticca Creative Agency">Creaticca Creative Agency</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> and is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>

@@ -46,5 +46,9 @@ module.exports = {
     rules: [
       moduleRule(/\.js$/, 'babel-loader')
     ]
-  }
+  },
+  plugins: [new webpack.DefinePlugin({
+    'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+    'process.env.isDevelopment': JSON.stringify(isDevelopment)
+  })]
 }

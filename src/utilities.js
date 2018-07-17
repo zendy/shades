@@ -204,10 +204,10 @@ export const proxyPropertyGetter = (genericHandler, originalValue = {}) => (
   })
 );
 
-export const proxyRecord = (handlers) => (originalRecord) => (
-  new Proxy(originalRecord, {
+export const withMethods = (handlers) => (originalValue) => (
+  new Proxy(originalValue, {
     get: (target, name) => (
-      Reflect.get(target, name) ?? handlers[name]
+      Reflect.get(target, name) ?? handlers?.[name]
     )
   })
 )

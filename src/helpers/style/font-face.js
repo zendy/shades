@@ -24,7 +24,6 @@ import {
   stateful,
   proxyFunction,
   proxyPropertyGetter,
-  proxyRecord,
   anyOf,
   allOf,
   firstItem,

@@ -11,14 +11,14 @@ import { style } from '@bupa-digital/shades/helpers';
 
 // A random collection of different style features
 const PseudoIcon = shades.i({
-  [style.before]: {
+  [style.element.before]: {
     // ::before
     fontSize: '15px',
     content: 'Hello there!'
   },
   [style.hover]: {
     // :hover
-    [style.after]: {
+    [style.element.after]: {
       // :hover::after
       fontFamily: 'Material Icons',
       content: 'close'
@@ -55,12 +55,19 @@ There are 3 types of pseudo-selector:
 
 You can find the list of supported pseudo-selectors [over here](#supported-pseudo-selectors)
 
-You can use any of the supported pseudo-selectors by name, like so:
+You can use any of the supported pseudo-classes and pseudo-functions by name on the style object, like so:
 
 ```js
 style.hover // :hover
-style.before // ::before
+style.focus // :focus
 style.not(style.active) // :not(:active)
+```
+
+For pseudo-elements, you can access them also by name via `style.element`:
+
+```js
+style.element.before // ::before
+style.element.after // ::after
 ```
 
 Not the most exciting example, to be honest.  But where it really gets powerful is in using combinators (coming up in the next section)
@@ -74,7 +81,6 @@ style.pseudo('just-a-test') // :just-a-test
 style.pseudo('custom-pseudo-function', 'hello') // :custom-pseudo-function(hello)
 style.element('wow-amazing') // ::wow-amazing
 ```
-
 
 ### Supported Pseudo-Selectors:
 
@@ -244,7 +250,7 @@ Although one thing you can do with property matching that you can't with all oth
 const MoneyButton = shades.button({
   // Here, the `value` argument is set to the value of the `currencyType` property if it is provided
   [style.prop.currencyType]: (value) => value === 'dollars' && ({
-    [style.before]: {
+    [style.element.before]: {
       // Whereas all other functions still receive all props as normal
       content: ({ amount }) => `Only $${amount}.99`
     }
@@ -269,4 +275,4 @@ style.props.all(style.prop.currencyType, style.prop.amount)
 
 > Note: When using a function with a `props` coombinator, the function will receive all props, rather than just the target ones.
 
-> Note: You **cannot** mix property matchers in pseudo/attribute combinators, i.e `style.any(style.hover, style.prop.fooBar)` - doing so could irreparably damage the fabric of spacetime.
+> Note: You **cannot** mix property matchers in pseudo/attribute combinators, i.e `style.any(style.hover, style.prop.fooBar)` - doing so could irreparably damage the fabric of reality and transform all physical matter into cosmic nothingness.

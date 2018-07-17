@@ -1,5 +1,5 @@
 import style, { parseStyleSymbol } from './style';
-import { getDescriptor } from './style/selector-store';
+import selectorRegistry from '../registries/selectors';
 
 const expectString = (original) => expect(original.toString());
 const expectSymbol = (original) => expect(
@@ -69,12 +69,10 @@ describe('style', () => {
     ).toEqual(':hover && :focus');
   });
   it('stores the descriptor that can be retrieved later', () => {
-    const result = getDescriptor(style.and(style.hover, style.focus));
+    const first = selectorRegistry.getDescriptor(style.and(style.hover, style.focus));
+    const last = selectorRegistry.getDescriptor(style.and(style.hover, style.focus));
 
-    expect(
-      result
-    ).toBeDefined();
-
+    expect(last).toBe(first);
   })
   it('supports the or operator as a method', () => {
     expectSymbol(

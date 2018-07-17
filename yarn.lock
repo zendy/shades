@@ -2324,6 +2324,10 @@ create-hmac@^1.1.0, create-hmac@^1.1.2, create-hmac@^1.1.4:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
+crocks@^0.9.4:
+  version "0.9.4"
+  resolved "https://registry.yarnpkg.com/crocks/-/crocks-0.9.4.tgz#bc4e13da4b3173a8e48af0a620dc83ee7c4b22b0"
+
 cross-env@^5.1.1:
   version "5.1.4"
   resolved "https://registry.yarnpkg.com/cross-env/-/cross-env-5.1.4.tgz#f61c14291f7cc653bb86457002ea80a04699d022"
