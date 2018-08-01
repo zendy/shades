@@ -52,6 +52,7 @@ const createElement = (tagName) => {
       |> forEach(([name, value]) => newElement.setAttribute(name, value))
       |> andReturn(output)
     ),
+    withEmptyAttribute: (name) => newElement.setAttribute(name, '') |> andReturn(output),
     unwrap: () => newElement
   });
 
@@ -96,9 +97,7 @@ const createStylesheetFor = (target) => {
   const styleSheetElement = (
     target.querySelector(`style[${stylesheetAttribute}]`) ||
     createElement('style')
-      .withAttributes({
-        [stylesheetAttribute]: true
-      })
+      .withEmptyAttribute(stylesheetAttribute)
       .appendTo(target)
       .unwrap()
   );
