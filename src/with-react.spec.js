@@ -135,6 +135,47 @@ describe('Shades DOM', () => {
     );
   });
 
+  it('allows extending multiple generic components', () => {
+    const PrimaryStyle = shades.generic({
+      fontSize: '24px',
+      [style.prop.primary]: {
+        color: 'blue',
+        [style.hover]: {
+          textDecoration: 'underline'
+        }
+      }
+    });
+
+    const SecondaryStyle = shades.generic({
+      fontSize: '12px',
+      [style.prop.secondary]: {
+        color: 'red',
+        [style.hover]: {
+          textDecoration: 'dotted'
+        }
+      }
+    });
+
+    const PrimarySecondaryLink = shades.a({
+      fontSize: '32px',
+      [style.hover]: {
+        border: '1px solid #ccc'
+      }
+    }).extend(PrimaryStyle, SecondaryStyle);
+
+    const subjectPrimary = mountShades(
+      <PrimarySecondaryLink primary />
+    );
+
+    const subjectSecondary = mountShades(
+      <PrimarySecondaryLink secondary />
+    );
+
+    expect(subjectPrimary).toMatchSnapshot();
+    expect(subjectSecondary).toMatchSnapshot();
+  });
+
+
   it('should allow styles to apply to custom components', () => {
     const SuperStyle = shades.withComponent({
       color: 'blue',
@@ -144,8 +185,8 @@ describe('Shades DOM', () => {
       }
     });
 
-    const ShadyComponent = SuperStyle((props) => (
-      <div>
+    const ShadyComponent = SuperStyle(({ className }) => (
+      <div className={className}>
         Hello this is a test
       </div>
     ))

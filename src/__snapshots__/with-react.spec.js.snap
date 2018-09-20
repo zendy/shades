@@ -19,30 +19,95 @@ exports[`Shades DOM Renders without incident 1`] = `
       </head>
     }
   >
-    <pure(getContext(shades.h1))
+    <shades.h1
       dark={true}
     >
-      <getContext(shades.h1)
-        dark={true}
+      <h1
+        className="shades-h1-229e27bf4f232311c23181b9c2eaf3fb287c58f6"
       >
-        <shades.h1
-          dark={true}
-          targetDom={
-            <head>
-              <style
-                data-shades=""
-              />
-            </head>
-          }
+        Hello
+      </h1>
+    </shades.h1>
+  </Component>
+</Shades.Provider>
+`;
+
+exports[`Shades DOM allows extending multiple generic components 1`] = `
+<Shades.Provider
+  to={
+    <head>
+      <style
+        data-shades=""
+      />
+    </head>
+  }
+>
+  <Component
+    to={
+      <head>
+        <style
+          data-shades=""
+        />
+      </head>
+    }
+  >
+    <shades.generic
+      primary={true}
+    >
+      <shades.generic
+        className="shades-generic-05fc52dcfe51af779ef19e6710ce617ee7d9587f"
+        primary={true}
+      >
+        <shades.a
+          className="shades-generic-21e218255cc25df3211dac78695b601e5004bc1e shades-generic-05fc52dcfe51af779ef19e6710ce617ee7d9587f"
+          primary={true}
         >
-          <h1
-            className="__shades-element shades-h1-229e27bf4f232311c23181b9c2eaf3fb287c58f6"
-          >
-            Hello
-          </h1>
-        </shades.h1>
-      </getContext(shades.h1)>
-    </pure(getContext(shades.h1))>
+          <a
+            className="shades-a-400abcdd9007ce0f7d951becc8a4cc2e0e64331a shades-generic-21e218255cc25df3211dac78695b601e5004bc1e shades-generic-05fc52dcfe51af779ef19e6710ce617ee7d9587f"
+          />
+        </shades.a>
+      </shades.generic>
+    </shades.generic>
+  </Component>
+</Shades.Provider>
+`;
+
+exports[`Shades DOM allows extending multiple generic components 2`] = `
+<Shades.Provider
+  to={
+    <head>
+      <style
+        data-shades=""
+      />
+    </head>
+  }
+>
+  <Component
+    to={
+      <head>
+        <style
+          data-shades=""
+        />
+      </head>
+    }
+  >
+    <shades.generic
+      secondary={true}
+    >
+      <shades.generic
+        className="shades-generic-bd383e91a3f695f5f0d03eb350b385776952603f"
+        secondary={true}
+      >
+        <shades.a
+          className="shades-generic-c6917cfc8de563e4823e8753d77989a9470d43b9 shades-generic-bd383e91a3f695f5f0d03eb350b385776952603f"
+          secondary={true}
+        >
+          <a
+            className="shades-a-db7f5bb9b6857bbd0e78cdcb432253e0a0d62cc6 shades-generic-c6917cfc8de563e4823e8753d77989a9470d43b9 shades-generic-bd383e91a3f695f5f0d03eb350b385776952603f"
+          />
+        </shades.a>
+      </shades.generic>
+    </shades.generic>
   </Component>
 </Shades.Provider>
 `;
@@ -66,30 +131,15 @@ exports[`Shades DOM renders a block matcher without incident 1`] = `
       </head>
     }
   >
-    <pure(getContext(shades.a))
+    <shades.a
       dark={true}
     >
-      <getContext(shades.a)
-        dark={true}
+      <a
+        className="shades-a-2e5a42365d82c7afb910df11f4f4a210fd7b6a61"
       >
-        <shades.a
-          dark={true}
-          targetDom={
-            <head>
-              <style
-                data-shades=""
-              />
-            </head>
-          }
-        >
-          <a
-            className="__shades-element shades-a-2e5a42365d82c7afb910df11f4f4a210fd7b6a61"
-          >
-            Hello
-          </a>
-        </shades.a>
-      </getContext(shades.a)>
-    </pure(getContext(shades.a))>
+        Hello
+      </a>
+    </shades.a>
   </Component>
 </Shades.Provider>
 `;
@@ -113,25 +163,13 @@ exports[`Shades DOM renders a block matcher without incident 2`] = `
       </head>
     }
   >
-    <pure(getContext(shades.a))>
-      <getContext(shades.a)>
-        <shades.a
-          targetDom={
-            <head>
-              <style
-                data-shades=""
-              />
-            </head>
-          }
-        >
-          <a
-            className="__shades-element shades-a-04e364fd62e2ed558a4f6cf657ba7f4287a09c02"
-          >
-            No Props!
-          </a>
-        </shades.a>
-      </getContext(shades.a)>
-    </pure(getContext(shades.a))>
+    <shades.a>
+      <a
+        className="shades-a-04e364fd62e2ed558a4f6cf657ba7f4287a09c02"
+      >
+        No Props!
+      </a>
+    </shades.a>
   </Component>
 </Shades.Provider>
 `;
@@ -155,27 +193,17 @@ exports[`Shades DOM should allow styles to apply to custom components 1`] = `
       </head>
     }
   >
-    <pure(getContext(shades.dee023e4d80ad9623adf0436ba85a175))>
-      <getContext(shades.dee023e4d80ad9623adf0436ba85a175)>
-        <shades.dee023e4d80ad9623adf0436ba85a175
-          targetDom={
-            <head>
-              <style
-                data-shades=""
-              />
-            </head>
-          }
+    <shades.generic>
+      <Component
+        className="shades-generic-14ac31c0dced087664878a551157de18d7788d96"
+      >
+        <div
+          className="shades-generic-14ac31c0dced087664878a551157de18d7788d96"
         >
-          <Component
-            className="__shades-element shades-dee023e4d80ad9623adf0436ba85a175-f5e7f954ecb35943b1a33db3c54c666f41c748c9"
-          >
-            <div>
-              Hello this is a test
-            </div>
-          </Component>
-        </shades.dee023e4d80ad9623adf0436ba85a175>
-      </getContext(shades.dee023e4d80ad9623adf0436ba85a175)>
-    </pure(getContext(shades.dee023e4d80ad9623adf0436ba85a175))>
+          Hello this is a test
+        </div>
+      </Component>
+    </shades.generic>
   </Component>
 </Shades.Provider>
 `;

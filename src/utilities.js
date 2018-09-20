@@ -106,6 +106,7 @@ export const noop      = ()       => {};
 export const id        = (value)  => value;
 export const firstItem = nth(0);
 export const lastItem = last;
+export const negate = (original) => !original;
 
 export const isArray            = isType('array');
 export const isString           = isType('string');
@@ -204,13 +205,15 @@ export const proxyPropertyGetter = (genericHandler, originalValue = {}) => (
   })
 );
 
-export const withMethods = (handlers) => (originalValue) => (
-  new Proxy(originalValue, {
+export const withMethods = (handlerCreator) => (originalValue) => {
+  const handlers = originalValue |> valueAsFunction(handlerCreator);
+
+  return new Proxy(originalValue, {
     get: (target, name) => (
       Reflect.get(target, name) ?? handlers?.[name]
     )
   })
-)
+}
 
 export const proxyFunction = (callHandler, chainHandlers) => {
   const outerProxy = new Proxy(callHandler, {
@@ -280,6 +283,8 @@ export const when = (...predicates) => {
     otherwise: (...falsyHandlers) => evaluateWith()(falsyHandlers)
   })
 };
+
+export const not = when(isFunction).then(complement).otherwise(negate);
 
 export const dotPath = curry(
   (pathStr, target) => target >> path(pathStr >> split('.'))
@@ -379,13 +384,18 @@ const shouldShowDebug = !isProduction && !isTest;
 
 export const shadesLog = (displayName = 'Shades') => {
   const makeLogTitle = (original) => logColours.gray('<', original |> logColours.blue, '> ');
-  const logTitle = logColours.gray(`<${displayName |> logColours.blue}> `)
+  const logTitle = makeLogTitle(displayName);
 
   return {
-    error:   (...data) => logTitle.log(
-      'Error:' |> logColours.red,
-      ...data
-    ),
+    ...logColours,
+    error:   (...data) => {
+      logTitle.log(
+        'Error:' |> logColours.red,
+        ...data
+      );
+
+      return new Error(...data);
+    },
     warning: (...data) => shouldShowDebug && logTitle.log(
       'Warning: ' |> logColours.orange,
       ...data
@@ -394,13 +404,23 @@ export const shadesLog = (displayName = 'Shades') => {
       'Info: ' |> logColours.blue,
       ...data
     ),
-    deprecated: (originalName, originalFn) => originalFn |> when(shouldShowDebug).then(
+    deprecated: curry((originalName, originalFn) => originalFn |> when(shouldShowDebug).then(
       proxyPassthroughFunction((propertyName) => (
         makeLogTitle(displayName).log(
           logColours.orange('Deprecation warning: '),
           logColours.purple(originalName), ' is deprecated.  Please check the documentation for more details.'
         )
       ))
+    )),
+    deprecatedAlternative: curry(
+      (originalName, alternativeName, originalFn) => originalFn |> when(shouldShowDebug).then(
+        proxyPassthroughFunction((propertyName) => (
+          makeLogTitle(displayName).log(
+            logColours.orange('Deprecation warning: '),
+            logColours.purple(originalName), ' is deprecated and has been replaced by ', logColours.purple(alternativeName), '.  Please check the documentation for more details.'
+          )
+        ))
+      )
     )
   }
 }

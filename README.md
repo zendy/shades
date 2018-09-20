@@ -14,9 +14,12 @@ If you want to try it out in a repl, [here's one I prepared earlier!](https://co
 
 Check out the Github page: https://bupa-digital.github.io/shades
 
-## Helpers
+## More Documentation
 
-You can find the list of all the different supported helpers, including `style` and `mq` and how to use them over at the [Helper Docs.](docs/helpers.md)
+- **[Helpers](docs/helpers.md):** Built-in helper tools
+  - [style](docs/helpers/style.md): For pseudo-selectors, attribute selectors and property pattern matching
+  - [mq](docs/helpers/mq.md): For making media queries
+- **[Generic Components & Composition](docs/composition.md)**
 
 ## Why
 

@@ -7,7 +7,8 @@ import {
   prop,
   propEq,
   equals,
-  mapObjIndexed
+  mapObjIndexed,
+  has
 } from 'ramda';
 
 import selectorRegistry from '../registries/selectors';
@@ -160,9 +161,11 @@ const pseudoClassHandler = (specialChains) => (targetName) => {
 
   if (PSEUDO_SELECTORS.ELEMENTS.includes(targetName)) return (
     targetName |> asPseudoElement
-  )
+  );
 
-  return specialChains?.[targetName];
+  if (specialChains |> has(targetName)) return specialChains[targetName];
+
+  throw new TypeError(`No such property: "${targetName}"`);
 }
 
 

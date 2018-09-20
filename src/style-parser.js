@@ -73,7 +73,7 @@ const toLog            = (...msgs) => (first, ...rest) => console.log(...msgs, [
 const toString         = (value) => value.toString();
 const mergeLeft        = flip(merge);
 
-const parserLog = shadesLog('Shades#parser');
+const parserLog = shadesLog('Shades:style-parser');
 
 const stopRightThereCriminalScum = (validTypes, givenKey) => (givenValue) => {
   parserLog.error(
@@ -361,6 +361,7 @@ export const parseAllStyles = parseStyleMetaData({
       |> whenFunctionCallWith(props[propName])
       |> parseNested(parentSelector)
     )
+    else parserLog.info(`Property not found: "${propName}"`);
   },
   styleSymbol: ({ extendSelector, props, parseNested, parentSelector, propExists }) => (
     (symbolKey, styleBlock) => {
