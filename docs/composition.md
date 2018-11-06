@@ -71,7 +71,7 @@ const renderedPage = (
 )
 ```
 
-If you want to use multiple generic components without lots of nesting, you can use the `.extends` method on any shades component, like so:
+If you want to use multiple generic components without lots of nesting, you can use the `.extend` method on any shades component, like so:
 
 ```js
 const FooGeneric = shades.generic({
@@ -88,7 +88,7 @@ const BarGeneric = shades.generic({
 const ListItemFooBar = shades.li({
   fontFamily: 'serif',
   color: 'dodgerblue'
-}).extends(
+}).extend(
   FooGeneric,
   BarGeneric
 )
