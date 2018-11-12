@@ -53,17 +53,23 @@ export const Shades = compose(
   setDisplayName('Shades.Provider'),
   setPropTypes({
     to: PropTypes.object.isRequired,
-    showDebug: PropTypes.bool
+    showDebug: PropTypes.bool,
+    prefixer: PropTypes.oneOfType([PropTypes.bool, PropTypes.object])
   }),
   withContext(
-    { targetDom: PropTypes.object, showDebug: PropTypes.bool },
-    props => ({ targetDom: props.to, showDebug: props.showDebug })
+    {
+      targetDom: PropTypes.object,
+      showDebug: PropTypes.bool,
+      prefixer: PropTypes.oneOfType([PropTypes.bool, PropTypes.object])
+    },
+    ({ to, showDebug, prefixer }) => ({ targetDom: to, showDebug, prefixer })
   )
 )(props => props.children);
 
 const applyShadeContext = setStatic('contextTypes', {
   targetDom: PropTypes.object,
-  showDebug: PropTypes.bool
+  showDebug: PropTypes.bool,
+  prefixer: PropTypes.oneOfType([PropTypes.bool, PropTypes.object])
 })
 
 const badConfigMsg    = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
@@ -80,17 +86,17 @@ const prettyComponentFactory = curry(
     const logger            = shadesLog(prettyDisplayName);
 
     const prettyElement = (
-      ({ children, className, ...props }, { targetDom, showDebug }) => {
+      ({ children, className, ...props }, { targetDom, showDebug, prefixer }) => {
         if (!targetDom) {
           throw logger.error(badConfigMsg);
         }
 
         const computedStyleClassName = css(
           {
-            displayName: prettyDisplayName,
             className:   baseClassName,
             target:      targetDom,
             showDebug,
+            prefixer,
             props
           },
           styleRules
@@ -131,9 +137,11 @@ const genericStyles = curry(
   (styleRules, Component) => prettyComponentFactory(Component, styleRules)
 );
 
+const withComponent = genericStyles |> shadesLog().deprecatedAlternative('.withComponent', '.generic');
+
 const domHelpers = htmlTagNames.reduce((result, tag) => ({
   ...result,
   [tag]: prettyComponentFactory(tag)
-}), { withComponent: genericStyles |> shadesLog().deprecatedAlternative('.withComponent', '.generic'), generic: genericStyles, Provider: Shades });
+}), { withComponent, generic: genericStyles, Provider: Shades });
 
 export default domHelpers;

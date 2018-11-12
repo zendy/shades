@@ -6,7 +6,7 @@ import { states, mq, style } from './helpers';
 
 describe('Shades DOM', () => {
   const mountShades = (data) => mount(
-    <shades.Provider to={document.querySelector('head')}>
+    <shades.Provider to={document.querySelector('head')} prefixer>
       {data}
     </shades.Provider>
   );

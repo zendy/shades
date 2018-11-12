@@ -2,6 +2,7 @@
 
 exports[`Shades DOM Renders without incident 1`] = `
 <Shades.Provider
+  prefixer={true}
   to={
     <head>
       <style
@@ -11,6 +12,7 @@ exports[`Shades DOM Renders without incident 1`] = `
   }
 >
   <Component
+    prefixer={true}
     to={
       <head>
         <style
@@ -34,6 +36,7 @@ exports[`Shades DOM Renders without incident 1`] = `
 
 exports[`Shades DOM allows extending multiple generic components 1`] = `
 <Shades.Provider
+  prefixer={true}
   to={
     <head>
       <style
@@ -43,6 +46,7 @@ exports[`Shades DOM allows extending multiple generic components 1`] = `
   }
 >
   <Component
+    prefixer={true}
     to={
       <head>
         <style
@@ -74,6 +78,7 @@ exports[`Shades DOM allows extending multiple generic components 1`] = `
 
 exports[`Shades DOM allows extending multiple generic components 2`] = `
 <Shades.Provider
+  prefixer={true}
   to={
     <head>
       <style
@@ -83,6 +88,7 @@ exports[`Shades DOM allows extending multiple generic components 2`] = `
   }
 >
   <Component
+    prefixer={true}
     to={
       <head>
         <style
@@ -114,6 +120,7 @@ exports[`Shades DOM allows extending multiple generic components 2`] = `
 
 exports[`Shades DOM renders a block matcher without incident 1`] = `
 <Shades.Provider
+  prefixer={true}
   to={
     <head>
       <style
@@ -123,6 +130,7 @@ exports[`Shades DOM renders a block matcher without incident 1`] = `
   }
 >
   <Component
+    prefixer={true}
     to={
       <head>
         <style
@@ -146,6 +154,7 @@ exports[`Shades DOM renders a block matcher without incident 1`] = `
 
 exports[`Shades DOM renders a block matcher without incident 2`] = `
 <Shades.Provider
+  prefixer={true}
   to={
     <head>
       <style
@@ -155,6 +164,7 @@ exports[`Shades DOM renders a block matcher without incident 2`] = `
   }
 >
   <Component
+    prefixer={true}
     to={
       <head>
         <style
@@ -176,6 +186,7 @@ exports[`Shades DOM renders a block matcher without incident 2`] = `
 
 exports[`Shades DOM should allow styles to apply to custom components 1`] = `
 <Shades.Provider
+  prefixer={true}
   to={
     <head>
       <style
@@ -185,6 +196,7 @@ exports[`Shades DOM should allow styles to apply to custom components 1`] = `
   }
 >
   <Component
+    prefixer={true}
     to={
       <head>
         <style
