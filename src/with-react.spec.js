@@ -4,6 +4,10 @@ import { mount, render } from 'enzyme';
 import shades from './with-react';
 import { states, mq, style } from './helpers';
 
+const getStylesheet = () => (
+  [...document.querySelector('style[data-shades]').sheet.cssRules].map(item => item.cssText).join('\n\n')
+)
+
 describe('Shades DOM', () => {
   const mountShades = (data) => mount(
     <shades.Provider to={document.querySelector('head')} prefixer>
@@ -198,5 +202,17 @@ describe('Shades DOM', () => {
     expect(subject).toMatchSnapshot();
   });
 
+  it('really does the autoprefixing it is supposed to do', () => {
+    const Howdy = shades.button({
+      userSelect: 'none',
+      display: 'grid'
+    });
+
+    const subject = mountShades(
+      <Howdy />
+    );
+
+    expect(getStylesheet()).toContain('-user-select:');
+  });
 
 });

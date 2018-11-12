@@ -47,6 +47,16 @@ This assumes you're going to be using React.  There is an agnostic `css` functio
 
 The most important part of using Shades is the Shades provider - similar to Redux and other libraries, we use a Provider to supply a render target to all Shades elements that might be used inside the render tree.  This also means that you can have different Shades instances with different render targets for different shadow doms.
 
+#### Without Shadow-Dom
+
+If you aren't using the shadow-dom, then your shades provider could look as simple as:
+
+```js
+<shades.Provider to={document.querySelector('body')}>
+  {/* the rest of your app goes here */}
+</shades.Provider>
+```
+
 #### With Shadow-Dom
 
 Here's an example of what a top level web component might look like:
@@ -93,23 +103,25 @@ customElements.define('counter-view', class extends HTMLElement {
 });
 ```
 
-If you want to have shades show you pretty log messages to tell you what it's doing, pass `showDebug={true}` to the Shades provider, like so:
+#### Autoprefixer
+
+To enable vendor prefixing with autoprefixer, you can pass a `prefixer` prop to the provider:
 
 ```js
-<shades.Provider to={shadowRoot} showDebug={true}>
-  <CounterView {...props} />
+<shades.Provider to={domNode} prefixer>
+  ...
 </shades.Provider>
 ```
 
-(Remember to turn that off for production builds!)
+By default, the configuration is:
+- **browsers**: last 4 versions
+- **grid**: true
 
-#### Without Shadow-Dom
-
-If you aren't using the shadow-dom, then your shades provider could look as simple as:
+To change these, just pass in your own configuration object to the `prefixer` prop like so:
 
 ```js
-<shades.Provider to={document.querySelector('body')}>
-  {/* the rest of your app goes here */}
+<shades.Provider to={domNode} prefixer={{browsers: 'latest', grid: false}}>
+  ...
 </shades.Provider>
 ```
 
