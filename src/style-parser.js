@@ -16,6 +16,7 @@ import {
   isDefined,
   isNumber,
   isSymbol,
+  isNotFalse,
   joinString,
   isUndefinedOrFalse,
   shadesLog,
@@ -26,6 +27,10 @@ import {
   mapMerge,
   getSubstringAfter
 } from './utilities';
+
+import {
+  config
+} from './utilities/config';
 
 import {
   not,
@@ -57,6 +62,8 @@ import {
   all,
   type
 } from 'ramda';
+
+import autoprefixer from 'autoprefixer';
 
 import {
   styleCache,
@@ -285,7 +292,7 @@ const parseStyleMetaData = (ruleResponder) => {
         key,
         value
       ) || result;
-    }
+    };
 
     const symbolRules = Object.getOwnPropertySymbols(rules) |> map((sym) => ([
       sym,
@@ -422,6 +429,14 @@ export const parseAllStyles = parseStyleMetaData({
   )
 })
 
+export const generateVendorPrefixes = (options = {}) => (originalCss) => (
+  autoprefixer.process(
+    originalCss,
+    {},
+    options
+  ).stringify().css
+)
+
 /**
  * stringifyRules: takes an object where the key is the selector and the value
  * is the array of rules for that selector. Returns an array of CSS rule strings.
@@ -431,7 +446,7 @@ export const parseAllStyles = parseStyleMetaData({
 export const stringifyRules = (rules) => (
   rules.entries() |> reduce((result, [selectors, styleRules]) => {
     if (selectors |> isAtRule) {
-      const innerRuleStrings = stringifyRules(styleRules);
+      const innerRuleStrings = styleRules |> stringifyRules;
       const wrappedWithAtRules = innerRuleStrings.map(
         rule => `${selectors} { ${rule} }`
       );
@@ -441,12 +456,15 @@ export const stringifyRules = (rules) => (
         ...wrappedWithAtRules
       ];
     }
+
     const createRuleString = ([key, value]) => `${key}: ${value};`;
     const joinedRules = styleRules |> toPairs |> map(createRuleString) |> join('');
 
+    const outputCss = `${selectors} { ${joinedRules} }`;
+
     return [
       ...result,
-      `${selectors} { ${joinedRules} }`
+      outputCss
     ];
   }, [])
 );
@@ -459,13 +477,21 @@ const computeClassname = (className, ...data) => ([
   computeClassnameHash(className, ...data)
 ]).join('-')
 
-export const css = ({ className, props = {}, target, showDebug, displayName }, styleRules) => {
+export const css = ({ className, props = {}, target, prefixer }, styleRules) => {
   const computedSelectorString = computeClassname(className, styleRules, props);
 
   const createRules = () => (
     styleRules
     |> parseAllStyles({ parentSelector: [computedSelectorString |> asClassName], props })
     |> stringifyRules
+    |> when(prefixer |> isDefined).then(
+      map(generateVendorPrefixes(
+        config(prefixer).orDefaults({
+          browsers: 'last 4 versions',
+          grid: true
+        })
+      ))
+    )
   );
 
   return stylesheetRegistry.getSheetFor(target).insertStyles(

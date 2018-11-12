@@ -121,6 +121,8 @@ export const isDefined          = complement(isNil);
 export const isNotDefined       = isNil;
 
 export const isUndefinedOrFalse = either(isNotDefined, equals(false));
+export const isFalse            = equals(false);
+export const isNotFalse         = complement(isFalse);
 
 export const isNotArray         = complement(isArray);
 export const isNotString        = complement(isString);

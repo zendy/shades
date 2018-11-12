@@ -1,13 +1,18 @@
 import {
   css,
   parseAllStyles,
-  stringifyRules
+  stringifyRules,
+  generateVendorPrefixes
 } from './style-parser';
 
 import {
   states,
   mq
 } from './helpers';
+
+import {
+  map
+} from 'ramda';
 
 import style from './helpers/style';
 
@@ -16,10 +21,12 @@ const parseRulesNoDebug = (selector, props, rules) => parseAllStyles({
   props
 })(rules).toJS();
 
-const parseAndStringify = (selector, props, rules) => parseAllStyles({
-  parentSelector: [selector],
-  props
-})(rules) |> stringifyRules;
+const parseAndStringify = (selector, props, rules) => (
+  parseAllStyles({
+    parentSelector: [selector],
+    props
+  })(rules) |> stringifyRules
+);
 
 const topSelector = '#meow';
 
@@ -67,6 +74,7 @@ describe('parseRules', () => {
       'border': '1px solid #000'
     });
   })
+
   it('supports the style combinators', () => {
     const topSelectorHoverFocus = `${topSelector}:hover,${topSelector}:focus`;
 
@@ -79,7 +87,6 @@ describe('parseRules', () => {
       }
     });
 
-
     expect(result).toHaveProperty([topSelectorHoverFocus]);
 
     const expectedStyles = {
@@ -91,6 +98,7 @@ describe('parseRules', () => {
       expectedStyles
     );
   })
+
   // TODO: stop using this as my "test-everything-ever" bucket
   it('should shift at-rules up to the top level', () => {
     const topSelectorHover = `${topSelector}:hover`;
@@ -494,33 +502,22 @@ describe('stringifyRules', () => {
       fontWeight: 'normal'
     });
 
-    const hoverFocusActiveVisited = [
-      ':hover:active',
-      ':focus:active',
-      ':hover:visited',
-      ':focus:visited',
-    ].map((value) => `${fakeGeneratedClass}${value}`).join(',')
-
-    const hoverFocusActiveVisitedBeforeAfter = [
-      ':hover:active::before',
-      ':focus:active::before',
-      ':hover:visited::before',
-      ':focus:visited::before',
-      ':hover:active::after',
-      ':focus:active::after',
-      ':hover:visited::after',
-      ':focus:visited::after'
-    ].map((value) => `${fakeGeneratedClass}${value}`).join(',')
-
-
-    expect(result).toEqual([
-      `${hoverFocusActiveVisitedBeforeAfter} { font-weight: super-ultra-bold; }`,
-      `@media screen and (min-width:500px) { ${hoverFocusActiveVisitedBeforeAfter} { font-family: helvetica-is-trendy; } }`,
-      `@media screen and (min-width:500px) { ${fakeGeneratedClass} { fake-attribute: whats-up; } }`,
-      `${hoverFocusActiveVisited} { font-family: whatever; }`,
-      `${fakeGeneratedClass} { font-size: 10px;color: something-alright;background: something-alright;font-weight: normal; }`,
-      `${fakeGeneratedClass}:hover { background: red; }`,
-      `${fakeGeneratedClass}:hover { text-decoration: underline; }`
-    ])
+    expect(result).toMatchSnapshot();
   });
+
+  it('should use autoprefixer to generate vendor prefixes', () => {
+    const fakeSelector = '.prefix-me';
+    const fakeProps = {};
+
+    const result = parseAndStringify(fakeSelector, fakeProps, {
+      display: 'grid',
+      userSelect: 'none'
+    }) |> map(generateVendorPrefixes({
+      browsers: 'last 4 versions',
+      grid: true
+    }))
+
+    expect(result).toMatchSnapshot();
+  });
+
 });

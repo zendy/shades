@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`stringifyRules should not fail spectacularly 1`] = `
+Array [
+  "lol-what-1234:hover:active::before,lol-what-1234:focus:active::before,lol-what-1234:hover:visited::before,lol-what-1234:focus:visited::before,lol-what-1234:hover:active::after,lol-what-1234:focus:active::after,lol-what-1234:hover:visited::after,lol-what-1234:focus:visited::after { font-weight: super-ultra-bold; }",
+  "@media screen and (min-width:500px) { lol-what-1234:hover:active::before,lol-what-1234:focus:active::before,lol-what-1234:hover:visited::before,lol-what-1234:focus:visited::before,lol-what-1234:hover:active::after,lol-what-1234:focus:active::after,lol-what-1234:hover:visited::after,lol-what-1234:focus:visited::after { font-family: helvetica-is-trendy; } }",
+  "@media screen and (min-width:500px) { lol-what-1234 { fake-attribute: whats-up; } }",
+  "lol-what-1234:hover:active,lol-what-1234:focus:active,lol-what-1234:hover:visited,lol-what-1234:focus:visited { font-family: whatever; }",
+  "lol-what-1234 { font-size: 10px;color: something-alright;background: something-alright;font-weight: normal; }",
+  "lol-what-1234:hover { background: red; }",
+  "lol-what-1234:hover { text-decoration: underline; }",
+]
+`;
+
+exports[`stringifyRules should use autoprefixer to generate vendor prefixes 1`] = `
+Array [
+  ".prefix-me { display: -ms-grid; display: grid;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none; }",
+]
+`;

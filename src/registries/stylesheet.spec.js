@@ -30,7 +30,7 @@ describe('Stylesheet registry', () => {
 
     expect(result).toEqual(fakeSelector);
     expect(target.querySelector).toHaveBeenCalledWith('style[data-shades]');
-    expect(target.appendChild).toHaveBeenCalled
+    expect(target.appendChild).toHaveBeenCalled();
   });
 
   it('should create a new stylesheet when one doesnt already exist', () => {
