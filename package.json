@@ -28,7 +28,6 @@
     "build:dev": "yarn run purge; cross-env NODE_ENV=development webpack --config ./webpack.config.js",
     "test": "cross-env NODE_ENV=test jest '.spec.js' --colors",
     "test:watch": "cross-env NODE_ENV=test jest '.spec.js' --watch --no-cache",
-    "preversion": "yarn run build",
     "postversion": "git push --tags"
   },
   "devDependencies": {
