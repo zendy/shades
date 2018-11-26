@@ -31,32 +31,33 @@
     "postversion": "git push --tags"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-nullish-coalescing-operator": "7.0.0-beta.44",
-    "@babel/plugin-proposal-object-rest-spread": "7.0.0-beta.44",
-    "@babel/plugin-proposal-optional-chaining": "7.0.0-beta.44",
-    "@babel/plugin-transform-classes": "7.0.0-beta.44",
-    "@babel/plugin-transform-runtime": "7.0.0-beta.44",
-    "@babel/preset-env": "7.0.0-beta.44",
-    "@babel/preset-react": "7.0.0-beta.44",
-    "@babel/preset-stage-0": "7.0.0-beta.44",
-    "babel-core": "7.0.0-bridge.0",
-    "babel-jest": "22.4.3",
-    "babel-loader": "7.1.4",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/plugin-proposal-decorators": "^7.1.2",
+    "@babel/plugin-proposal-do-expressions": "^7.0.0",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.0.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0",
+    "@babel/plugin-proposal-pipeline-operator": "^7.0.0",
+    "@babel/plugin-transform-classes": "^7.1.0",
+    "@babel/plugin-transform-runtime": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/preset-stage-0": "^7.0.0",
+    "babel-core": "^7.0.0-bridge",
+    "babel-jest": "^23.6.0",
+    "babel-loader": "^8.0.4",
     "babel-plugin-pipe-composition": "0.1.1",
     "babel-plugin-transform-custom-element-classes": "0.1.0",
     "cross-env": "^5.1.1",
-    "enzyme": "^3.3.0",
-    "enzyme-adapter-react-16": "^1.1.1",
-    "enzyme-to-json": "^3.3.3",
+    "enzyme": "^3.7.0",
+    "enzyme-adapter-react-16": "^1.7.0",
     "is-callable": "^1.1.4",
-    "jest": "^22.4.2",
-    "jest-environment-enzyme": "^6.0.0",
-    "jest-enzyme": "^6.0.0",
-    "jsdom": "^11.7.0",
+    "jest": "^23.6.0",
+    "jest-enzyme": "^7.0.1",
     "prop-types": "^15.6.1",
     "ramda": "^0.25.0",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0",
     "recompose": "^0.26.0",
     "regenerator-runtime": "0.11.1",
     "webpack": "4.6.0",
@@ -66,13 +67,13 @@
   "peerDependencies": {
     "prop-types": "^15.6.1",
     "ramda": "^0.25.0",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0",
     "recompose": "^0.26.0"
   },
   "dependencies": {
-    "@babel/core": "7.0.0-beta.44",
-    "@babel/runtime": "7.0.0-beta.44",
+    "@babel/core": "^7.1.2",
+    "@babel/runtime": "^7.1.0",
     "autoprefixer": "^7.2.1",
     "crocks": "^0.9.4",
     "fast-memoize": "^2.3.2",
@@ -87,19 +88,8 @@
   "jest": {
     "verbose": true,
     "transform": {
-      "^.+\\.js$": "babel-jest"
+      "^.+\\.jsx?$": "babel-jest"
     },
-    "setupFiles": [
-      "./test-setup.js"
-    ],
-    "setupTestFrameworkScriptFile": "./node_modules/jest-enzyme/lib/index.js",
-    "snapshotSerializers": [
-      "enzyme-to-json/serializer"
-    ],
-    "unmockedModulePathPatterns": [
-      "react",
-      "enzyme",
-      "jest-enzyme"
-    ]
+    "setupTestFrameworkScriptFile": "./node_modules/jest-enzyme/lib/index.js"
   }
 }

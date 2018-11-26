@@ -59,21 +59,6 @@ const createElement = (tagName) => {
   return output;
 }
 
-export const styleCache = globalScope.getOrCreate(styleCacheKey, () => {
-  const dataStore = new Map();
-
-  return dataStore |> withMethods({
-    add: (selector, generateStyle) => (
-      maybeDefined(dataStore.get(selector))
-      |> orElse(compose(
-        selector |> addToMap(dataStore),
-        generateStyle
-      ))
-      |> pair(selector)
-    )
-  });
-})
-
 const fastInsertRule = curry(
   (target, rule) => {
     const index = target?.cssRules?.length ?? 1;
@@ -115,6 +100,21 @@ const createStylesheetFor = (target) => {
     }
   })
 }
+
+export const styleCache = globalScope.getOrCreate(styleCacheKey, () => {
+  const dataStore = new Map();
+
+  return dataStore |> withMethods({
+    add: (selector, generateStyle) => (
+      maybeDefined(dataStore.get(selector))
+      |> orElse(compose(
+        selector |> addToMap(dataStore),
+        generateStyle
+      ))
+      |> pair(selector)
+    )
+  });
+})
 
 export const stylesheetRegistry = globalScope.getOrCreate(stylesheetRegistryKey, () => {
   const dataStore = new Map();

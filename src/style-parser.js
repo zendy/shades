@@ -60,7 +60,8 @@ import {
   last,
   forEach,
   all,
-  type
+  type,
+  always
 } from 'ramda';
 
 import autoprefixer from 'autoprefixer';
@@ -87,9 +88,12 @@ const stopRightThereCriminalScum = (validTypes, givenKey) => (givenValue) => {
     `Shades could not parse the style for ${givenKey |> parserLog.purple} because the provided value type (${givenValue |> type |> parserLog.red}) does not match any valid types (${validTypes |> map(parserLog.green) |> join(', ')})`
   );
 
-  throw new TypeError(
-  `Shades could not parse the style for ${givenKey} because the provided value type (${givenValue |> type}) does not match any valid types (${validTypes |> join(', ')})`
-  );
+  // Disabled the type error for the moment due to console inspectors sometimes inadvertently setting this off,
+  // so we're just notifying the console and then skipping rules that don't meet the type requirements
+
+  // throw new TypeError(
+  // `Shades could not parse the style for ${givenKey} because the provided value type (${givenValue |> type}) does not match any valid types (${validTypes |> join(', ')})`
+  // );
 }
 
 const isSelector         = startsWithAny('.', '#', '>');
@@ -162,14 +166,6 @@ const iterateUntilResult = curry(
   }
 );
 
-const addToSelector = curry((selectorName, original) => (givenRules) => ({
-  ...original,
-  [selectorName]: {
-    ...(original?.[selectorName] ?? {}),
-    ...givenRules
-  }
-}));
-
 const createStyleProperty = curry((key, value) => {
   const ruleKey = (
     key
@@ -183,13 +179,15 @@ const createStyleProperty = curry((key, value) => {
 
 const appendWith = (lastValue) => (firstValue) => [firstValue, lastValue].join('');
 
+const stringifySelector = when(isArray).then(join(','));
+
 // type StyleRules = { [Selector] :: { [RuleName] :: RuleValue } }
 const combinators = (parentSelector, { props, ...extraCombinators }) => (results) => {
   const mergeWithResult = (additionalRules) => results.mergeDeep(additionalRules);
   const mergeWithParentSelector = (additionalRules) => results.mergeIn([parentSelector], additionalRules);
   const addToSelector = curry((targetSelector, additionalRules) => (
     results.update(
-      targetSelector,
+      targetSelector |> stringifySelector,
       when(isDefined).then(mergeLeft(additionalRules)).otherwise(additionalRules)
     )
   ));
@@ -305,7 +303,7 @@ const parseStyleMetaData = (ruleResponder) => {
       |> concat(symbolRules)
       |> reduce(
         (result, [key, value]) => evaluateRule(result)(key, value),
-        initialResult
+        initialResult // OrderedMap from the default above
       )
     );
   }
