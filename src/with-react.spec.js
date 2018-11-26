@@ -1,19 +1,41 @@
 import React from 'react';
-import { mount, render } from 'enzyme';
+import Enzyme, { mount, render } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
 
 import shades from './with-react';
 import { states, mq, style } from './helpers';
 
-const getStylesheet = () => (
-  [...document.querySelector('style[data-shades]').sheet.cssRules].map(item => item.cssText).join('\n\n')
+Enzyme.configure({ adapter: new Adapter() });
+
+const replace = (searchValue, replaceValue) => (original) => (
+  original.replace(new RegExp(searchValue, 'g'), replaceValue)
+)
+
+const getStylesheetContents = (styleElement) => (
+  [...styleElement.sheet.cssRules]
+    .map(item => item.cssText)
+    .join('\n\n')
+    |> replace('{', '{\n  ')
+    |> replace('; ', ';\n  ')
+    |> replace(';}', ';\n}')
 )
 
 describe('Shades DOM', () => {
-  const mountShades = (data) => mount(
-    <shades.Provider to={document.querySelector('head')} prefixer>
-      {data}
-    </shades.Provider>
-  );
+  const mountShades = (data, options = { prefixer: true }) => {
+    const stylesheetContainer = document.createElement('span');
+    document.body.appendChild(stylesheetContainer);
+
+    const renderedOutput = mount(
+      <shades.Provider to={stylesheetContainer} {...options}>
+        {data}
+      </shades.Provider>
+    );
+
+    return {
+      rendered: renderedOutput,
+      stylesheet: getStylesheetContents(stylesheetContainer.querySelector('style'))
+    };
+  };
 
   it('Renders without incident', () => {
     const Title = shades.h1({
@@ -36,7 +58,7 @@ describe('Shades DOM', () => {
       <Title dark>Hello</Title>
     );
 
-    expect(titleSubject).toMatchSnapshot();
+    expect(titleSubject.rendered).toMatchSnapshot();
   });
 
   it('renders a block matcher without incident', () => {
@@ -67,13 +89,13 @@ describe('Shades DOM', () => {
       <Linky dark>Hello</Linky>
     );
 
-    expect(darkSubject).toMatchSnapshot();
+    expect(darkSubject.rendered).toMatchSnapshot();
 
     const noPropsSubject = mountShades(
       <Linky>No Props!</Linky>
     );
 
-    expect(noPropsSubject).toMatchSnapshot();
+    expect(noPropsSubject.rendered).toMatchSnapshot();
   });
 
   // Skipped due to a bug with an Enzyme library (Function.prototype.name and is-callable)
@@ -129,14 +151,8 @@ describe('Shades DOM', () => {
       <Linky dark>Hello</Linky>
     );
 
-    const styleSheetContents = [...document.querySelector('style[data-shades]').sheet.cssRules].map(item => item.cssText).join('\n\n');
-
-    expect(styleSheetContents).toEqual(
-      expect.stringContaining('background: purple;')
-    );
-    expect(styleSheetContents).toEqual(
-      expect.stringContaining('font-weight: 600;')
-    );
+    expect(darkSubject.stylesheet).toContain('background: purple;');
+    expect(darkSubject.stylesheet).toContain('font-weight: 600;');
   });
 
   it('allows extending multiple generic components', () => {
@@ -175,8 +191,8 @@ describe('Shades DOM', () => {
       <PrimarySecondaryLink secondary />
     );
 
-    expect(subjectPrimary).toMatchSnapshot();
-    expect(subjectSecondary).toMatchSnapshot();
+    expect(subjectPrimary.stylesheet).toMatchSnapshot();
+    expect(subjectSecondary.stylesheet).toMatchSnapshot();
   });
 
 
@@ -199,7 +215,7 @@ describe('Shades DOM', () => {
       <ShadyComponent />
     );
 
-    expect(subject).toMatchSnapshot();
+    expect(subject.rendered).toMatchSnapshot();
   });
 
   it('really does the autoprefixing it is supposed to do', () => {
@@ -212,7 +228,59 @@ describe('Shades DOM', () => {
       <Howdy />
     );
 
-    expect(getStylesheet()).toContain('-user-select:');
+    expect(subject.stylesheet).toContain('-user-select:');
   });
+
+  it('does not strip out advanced font rules', () => {
+    const Icon = shades.span({
+      lineHeight: 1,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      letterSpacing: 'normal',
+      textTransform: 'none',
+      fontFamily: 'Material Icons',
+      whiteSpace: 'nowrap',
+      wordWrap: 'normal',
+      direction: 'ltr',
+      fontFeatureSettings: 'liga',
+      fontSmoothing: 'antialiased'
+    });
+
+    const subject = mountShades(<Icon />);
+
+    expect(subject.stylesheet).toContain('font-feature-settings:');
+    expect(subject.stylesheet).toContain('font-smoothing:');
+  });
+
+  it('properly merges extended style rules', () => {
+    const Icon = shades.span({
+      background: 'purple',
+      border: '1px solid black',
+      color: 'white',
+      [style.prop.primary]: {
+        fontWeight: 600,
+        [style.hover]: {
+          textDecoration: 'underline',
+          borderColor: 'red'
+        }
+      }
+    }).extend({
+      background: 'black',
+      border: '2px solid purple',
+      [style.prop.primary]: {
+        textTransform: 'uppercase',
+        [style.hover]: {
+          borderColor: 'green'
+        }
+      }
+    });
+
+    const subject = mountShades(<Icon primary />);
+
+    // I think this is working, but there's no way to *properly* guarantee This
+    // in these unit tests yet (because of the leaky dom stuff)
+    expect(subject.stylesheet).toMatchSnapshot();
+  });
+
 
 });

@@ -11,7 +11,10 @@ import {
   prop,
   either,
   concat,
-  reduceRight
+  reduceRight,
+  mergeDeepRight,
+  map,
+  reduce
 } from 'ramda';
 
 import {
@@ -66,7 +69,7 @@ export const Shades = compose(
   )
 )(props => props.children);
 
-const applyShadeContext = setStatic('contextTypes', {
+const applyShadesContext = setStatic('contextTypes', {
   targetDom: PropTypes.object,
   showDebug: PropTypes.bool,
   prefixer: PropTypes.oneOfType([PropTypes.bool, PropTypes.object])
@@ -74,74 +77,76 @@ const applyShadeContext = setStatic('contextTypes', {
 
 const badConfigMsg    = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
 const isShades        = prop('__isShadesElement');
-const getShadesStyles = prop('__shadesStyles');
+const getShadesStyles = prop('__styleRules');
 
-const prettyComponentFactory = curry(
-  (tagName, styleRules) => {
-    const isGeneric = tagName |> not(isString);
-    const componentOrTagName = tagName |> when(isString).otherwise('generic');
+const shadesGeneralLogger = shadesLog('Shades.Provider');
 
-    const baseClassName     = componentOrTagName |> concat('shades-');
-    const prettyDisplayName = componentOrTagName |> concat('shades.');
-    const logger            = shadesLog(prettyDisplayName);
+const extendableStyleFactory = (metaData, extendableThing) => (styleRules = {}) => (
+  extendableThing(styleRules) |> withMethods((originalComponent) => ({
+    __isShadesElement: true,
+    __shadesMetadata: metaData,
+    __styleRules: styleRules,
+    extend: (...moreStyles) => {
+      const normalisedStyles = moreStyles |> map(when(isShades).then(getShadesStyles));
 
-    const prettyElement = (
-      ({ children, className, ...props }, { targetDom, showDebug, prefixer }) => {
-        if (!targetDom) {
-          throw logger.error(badConfigMsg);
-        }
-
-        const computedStyleClassName = css(
-          {
-            className:   baseClassName,
-            target:      targetDom,
-            showDebug,
-            prefixer,
-            props
-          },
-          styleRules
-        );
-
-        const propsToForward = props |> pickBy((val, key) => shouldForwardProperty(tagName, key));
-
-        return React.createElement(tagName, {
-          ...propsToForward,
-          className: joinWithSpace(computedStyleClassName, className),
-        }, children);
-      }
-    )
-    |> applyShadeContext
-    |> setDisplayName(prettyDisplayName)
-    |> withMethods((originalComponent) => ({
-        __isShadesElement: true,
-        __shadesStyles: styleRules,
-        __prettyName: prettyDisplayName,
-        __isGeneric: isGeneric,
-        __tagName: componentOrTagName,
-
-        match: (matcherRules) => prettyComponentFactory(tagName, {
-          ...styleRules,
-          '__match': matcherRules
-        }) |> logger.deprecated('.match'),
-
-        extend: (...genericComponents) => (
-          compose(...genericComponents)(originalComponent)
-        )
-      }));
-
-    return prettyElement;
-  }
+      return extendableStyleFactory(metaData, extendableThing)(
+        normalisedStyles |> reduce(mergeDeepRight, styleRules)
+      );
+    },
+    match: shadesGeneralLogger.deprecated('.match')((matcherRules) => extendableStyleFactory(metaData, extendableThing)({
+      ...styleRules,
+      '__match': matcherRules
+    })),
+  }))
 )
 
-const genericStyles = curry(
-  (styleRules, Component) => prettyComponentFactory(Component, styleRules)
+const shadesElement = (innerElement, { displayName, baseClass }) => (styleRules) => (
+  applyShadesContext(
+    ({ children, className, ...props }, { targetDom, showDebug, prefixer }) => {
+      if (!targetDom) throw new Error(badConfigMsg);
+
+      const computedClassname = css({
+        className:   baseClass,
+        target:      targetDom,
+        showDebug,
+        prefixer,
+        props
+      }, styleRules);
+
+      const propsToForward = props |> when(isString(innerElement)).then(
+        pickBy((val, key) => shouldForwardProperty(innerElement, key))
+      );
+
+      return React.createElement(innerElement, {
+        ...propsToForward,
+        className: joinWithSpace(computedClassname, className),
+      }, children);
+    }
+  ) |> setDisplayName(displayName)
 );
+
+const makeShadesDisplayName = (tagName) => `shades.${tagName}`;
+const makeShadesBaseClass = (tagName) => `shades-${tagName}`;
+
+const genericStyles = extendableStyleFactory({
+  isGeneric: true
+}, (styleRules) => (WrappedComponent) => styleRules |> shadesElement(WrappedComponent, {
+  displayName: makeShadesDisplayName('generic'),
+  baseClass: makeShadesBaseClass('generic')
+}))
 
 const withComponent = genericStyles |> shadesLog().deprecatedAlternative('.withComponent', '.generic');
 
 const domHelpers = htmlTagNames.reduce((result, tag) => ({
   ...result,
-  [tag]: prettyComponentFactory(tag)
+  [tag]: (
+    extendableStyleFactory({
+      isGeneric: false
+    }, shadesElement(tag, {
+      displayName: makeShadesDisplayName(tag),
+      baseClass: makeShadesBaseClass(tag)
+    }))
+  )
 }), { withComponent, generic: genericStyles, Provider: Shades });
 
 export default domHelpers;

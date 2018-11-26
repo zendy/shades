@@ -168,8 +168,6 @@ const pseudoClassHandler = (specialChains) => (targetName) => {
   throw new TypeError(`No such property: "${targetName}"`);
 }
 
-
-
 const style = (
   proxyPropertyGetter(
     pseudoClassHandler({
