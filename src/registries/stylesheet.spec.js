@@ -24,7 +24,7 @@ describe('Stylesheet registry', () => {
       'color: black-on-black-on-black'
     ];
 
-    const result = stylesheetRegistry.getSheetFor(target).insertStyles(
+    const result = stylesheetRegistry().getSheetFor(target).insertStyles(
       styleCache.add(fakeSelector, createRules)
     );
 
@@ -36,7 +36,7 @@ describe('Stylesheet registry', () => {
   it('should create a new stylesheet when one doesnt already exist', () => {
     const target = fakeDocument();
 
-    const result = stylesheetRegistry.getSheetFor(target);
+    const result = stylesheetRegistry().getSheetFor(target);
 
     expect(target.querySelector).toHaveBeenCalledWith('style[data-shades]');
     expect(target.appendChild).toHaveBeenCalled();
@@ -46,8 +46,8 @@ describe('Stylesheet registry', () => {
   it('should use the existing stylesheet if it already exists', () => {
     const target = fakeDocument();
 
-    const firstSheet = stylesheetRegistry.getSheetFor(target);
-    const secondSheet = stylesheetRegistry.getSheetFor(target);
+    const firstSheet = stylesheetRegistry().getSheetFor(target);
+    const secondSheet = stylesheetRegistry().getSheetFor(target);
 
     expect(target.querySelector).toHaveBeenCalledTimes(1);
     expect(target.appendChild).toHaveBeenCalledTimes(1);

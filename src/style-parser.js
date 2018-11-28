@@ -475,7 +475,7 @@ const computeClassname = (className, ...data) => ([
   computeClassnameHash(className, ...data)
 ]).join('-')
 
-export const css = ({ className, props = {}, target, prefixer }, styleRules) => {
+export const css = ({ className, props = {}, target, prefixer, showDebug }, styleRules) => {
   const computedSelectorString = computeClassname(className, styleRules, props);
 
   const createRules = () => (
@@ -492,7 +492,7 @@ export const css = ({ className, props = {}, target, prefixer }, styleRules) => 
     )
   );
 
-  return stylesheetRegistry.getSheetFor(target).insertStyles(
+  return stylesheetRegistry({ debug: showDebug }).getSheetFor(target).insertStyles(
     styleCache.add(computedSelectorString, createRules)
   )
 }

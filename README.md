@@ -52,8 +52,17 @@ The most important part of using Shades is the Shades provider - similar to Redu
 If you aren't using the shadow-dom, then your shades provider could look as simple as:
 
 ```js
+import shades from '@bupa-digital/shades/react';
+
+const Button = shades.button({
+  background: 'blue',
+  color: 'white',
+  cursor: 'pointer'
+});
+
 <shades.Provider to={document.querySelector('body')}>
   {/* the rest of your app goes here */}
+  <Button>Click me!</Button>
 </shades.Provider>
 ```
 
@@ -101,6 +110,16 @@ customElements.define('counter-view', class extends HTMLElement {
     )
   }
 });
+```
+
+#### Debugging
+
+To enable debug mode, which will make shades render styles that are visible to your browsers devtools, you can pass the `showDebug` property to the shades provider, e.g:
+
+```js
+<shades.Provider to={domNode} showDebug>
+  ...
+</shades.Provider>
 ```
 
 #### Autoprefixer
