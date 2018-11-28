@@ -76,7 +76,9 @@ const appendRule = (
     .otherwise(slowInsertRule)
 );
 
-const createStylesheetFor = (target) => {
+const appendRuleDebug = slowInsertRule;
+
+const createStylesheetFor = (config) => (target) => {
   const dataStore = new Map();
 
   const styleSheetElement = (
@@ -92,12 +94,18 @@ const createStylesheetFor = (target) => {
       const hasAlreadyInserted = dataStore.has(selector);
 
       if (!hasAlreadyInserted) {
-        stylesToInsert |> forEach(appendRule(styleSheetElement));
+        stylesToInsert |> when(config?.debug).then(
+          forEach(appendRuleDebug(styleSheetElement))
+        ).otherwise(
+          forEach(appendRule(styleSheetElement))
+        );
+
         dataStore.set(selector, true);
       }
 
       return selector;
-    }
+    },
+
   })
 }
 
@@ -116,11 +124,11 @@ export const styleCache = globalScope.getOrCreate(styleCacheKey, () => {
   });
 })
 
-export const stylesheetRegistry = globalScope.getOrCreate(stylesheetRegistryKey, () => {
+export const stylesheetRegistry = (config) => globalScope.getOrCreate(stylesheetRegistryKey, () => {
   const dataStore = new Map();
 
   const createAndAddStylesheet = (target) => {
-    const stylesheetForTarget = target |> createStylesheetFor;
+    const stylesheetForTarget = target |> createStylesheetFor(config);
     dataStore.set(target, stylesheetForTarget);
     return stylesheetForTarget;
   }
