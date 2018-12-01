@@ -1,7 +1,7 @@
 {
   "name": "@bupa-digital/shades",
   "author": "Bupa Digital Australia - Front-End Team <npm-digital@bupa.com.au>",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "homepage": "https://github.com/bupa-digital/shades",
   "repository": "https://github.com/bupa-digital/shades",
   "license": "MIT",
@@ -31,6 +31,7 @@
     "postversion": "git push --tags"
   },
   "devDependencies": {
+    "@babel/core": "7.1.2",
     "@babel/plugin-proposal-class-properties": "7.1.0",
     "@babel/plugin-proposal-decorators": "7.1.2",
     "@babel/plugin-proposal-do-expressions": "7.0.0",
@@ -72,7 +73,6 @@
     "recompose": "^0.26.0"
   },
   "dependencies": {
-    "@babel/core": "7.1.2",
     "@babel/runtime": "7.1.2",
     "autoprefixer": "^7.2.1",
     "crocks": "^0.9.4",

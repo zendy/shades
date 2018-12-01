@@ -270,6 +270,18 @@ describe('parseRules', () => {
       expect(result[topSelector]).not.toHaveProperty(['color']);
     })
 
+    it('skips the rule entirely if the props value is false, undefined or null', () => {
+      const result = parseRulesNoDebug(topSelector, { kittensEverywhere: false }, {
+        fontSize: '10px',
+        [style.prop.kittensEverywhere]: {
+          color: 'purple'
+        }
+      });
+
+      expect(result).toHaveProperty([topSelector]);
+      expect(result[topSelector]).not.toHaveProperty(['color']);
+    })
+
     it('will render a block of styles for a block pattern', () => {
       const result = parseRulesNoDebug(
         topSelector,
