@@ -7,6 +7,8 @@ import {
 import {
   dasherize,
   when,
+  not,
+  isFalsy,
   valueAsFunction,
   isObjectLiteral,
   isArray,
@@ -33,7 +35,6 @@ import {
 } from './utilities/config';
 
 import {
-  not,
   curry,
   compose,
   startsWith,
@@ -61,7 +62,8 @@ import {
   forEach,
   all,
   type,
-  always
+  always,
+  prop
 } from 'ramda';
 
 import autoprefixer from 'autoprefixer';
@@ -145,6 +147,11 @@ const findKeyForValue = (needle, fallback) => (haystack) => (
   defaultTo([fallback, true]) |>
   firstItem
 );
+
+const propExistsAndPasses = (name, predicate) => (original) => (
+  (original |> has(name)) &&
+  (original |> prop(name) |> predicate)
+)
 
 // Can iterate over arrays or object literals. Will call conputeFn
 // on each item or key/value pair in the data until the computeFn
@@ -361,7 +368,7 @@ export const parseAllStyles = parseStyleMetaData({
   propertyMatch: ({ parseNested, parentSelector, props, propExists }) => (key, value) => {
     const propName = key |> stripPropertyBangs;
 
-    if (propName |> propExists) return (
+    if (props |> propExistsAndPasses(propName, not(isUndefinedOrFalse))) return (
       value
       |> whenFunctionCallWith(props[propName])
       |> parseNested(parentSelector)
