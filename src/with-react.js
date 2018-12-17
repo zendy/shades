@@ -14,7 +14,13 @@ import {
   reduceRight,
   mergeDeepRight,
   map,
-  reduce
+  reduce,
+  toPairs,
+  fromPairs,
+  replace,
+  slice,
+  flip,
+  startsWith
 } from 'ramda';
 
 import {
@@ -36,7 +42,8 @@ import {
   withMethods,
   when,
   isString,
-  not
+  not,
+  firstItem
 } from './utilities';
 
 const joinWithSpace = safeJoinWith(' ');
@@ -100,6 +107,21 @@ const extendableStyleFactory = (metaData, extendableThing) => (styleRules = {}) 
   }))
 )
 
+const mapKeys = (mapper) => compose(
+  fromPairs,
+  map(([key, value]) => [mapper(key), value]),
+  toPairs
+)
+
+const deleteString = flip(replace)('');
+const sliceFrom = flip(slice)(Infinity);
+
+const htmlPrefix = 'html-';
+
+const removeHtmlPrefixes = mapKeys(
+  when(startsWith(htmlPrefix)).then(sliceFrom(htmlPrefix.length))
+)
+
 const shadesElement = (innerElement, { displayName, baseClass }) => (styleRules) => (
   applyShadesContext(
     ({ children, className, ...props }, { targetDom, showDebug, prefixer }) => {
@@ -113,8 +135,10 @@ const shadesElement = (innerElement, { displayName, baseClass }) => (styleRules)
         props
       }, styleRules);
 
+      // TODO: combine these operations for improved performance
       const propsToForward = props |> when(isString(innerElement)).then(
-        pickBy((val, key) => shouldForwardProperty(innerElement, key))
+        pickBy((val, key) => shouldForwardProperty(innerElement, key)),
+        removeHtmlPrefixes
       );
 
       return React.createElement(innerElement, {

@@ -101,7 +101,8 @@ describe('Shades DOM', () => {
   // Skipped due to a bug with an Enzyme library (Function.prototype.name and is-callable)
   // causing proxy-wrapped component constructors to throw an exception when attempting to
   // use the find method, essentially saying that the component is not a function (when it is).
-  it.skip('Forwards valid DOM props', () => {
+  // UPDATE: seems that this is no longer an issue, cautious optimism
+  it('Forwards valid DOM props', () => {
     const Linky = shades.a({
       color: 'pink',
       [style.prop.dark]: {
@@ -128,13 +129,29 @@ describe('Shades DOM', () => {
       <Linky href="hello.html" superDark="yeah" data-testing="just a test" aria-label="hello">Hello</Linky>
     );
 
-    const anchorItem = subject.find('a');
+    const anchorItem = subject.rendered.find('a');
 
     expect(anchorItem).toHaveProp('href', 'hello.html');
     expect(anchorItem).toHaveProp('data-testing', 'just a test');
     expect(anchorItem).toHaveProp('aria-label', 'hello');
     expect(anchorItem).not.toHaveProp('superDark');
   });
+
+  it('lets you escape from the html attribute filter by prefixing with "html-"', () => {
+    const Linky = shades.a({
+      color: 'blue'
+    })
+
+    const subject = mountShades(
+      <Linky nodice="not a valid attribute" html-foobar="passed through anyway">Hello</Linky>
+    );
+
+    const anchorItem = subject.rendered.find('a');
+
+    expect(anchorItem).toHaveProp('foobar')
+    expect(anchorItem).not.toHaveProp('nodice');
+  });
+
 
   it('should write the expected styles to the stylesheet', () => {
     const Linky = shades.a({

@@ -310,7 +310,9 @@ export default () => (
 );
 ```
 
-Shades will also happily pass along valid DOM properties to the styled element, such as `alt`, `title`, `href` for `a` tags, `src` for `img` and others, you get the picture.  Valid React props are also fully supported, such as `className`, `onClick`, etc.
+#### HTML Attributes
+
+Shades will happily pass along valid DOM properties to the styled element, such as `alt`, `title`, `href` for `a` tags, `src` for `img` and others, you get the picture.  Valid React props are also fully supported, such as `className`, `onClick`, etc.
 
 Example:
 
@@ -333,6 +335,24 @@ You can also pass along `data` and `aria` attributes as you please!
 <Linky data-greeting="Hello there" aria-label="This is not a good label, just an example">
   Click me!
 </Linky>
+```
+
+If you need to explicitly pass through an attribute to the underlying element that isn't necessarily valid, Shades provides an escape hatch.  To use it, simply prefix the attribute's name with `html-`.  For example, if you want to pass an attribute named `autoplay` to an `iframe` element that is defined with Shades:
+
+```js
+const ShadesFrame = shades.iframe({
+  // styles go here
+});
+
+export default () => (
+  <ShadesFrame html-autoplay="true" />
+)
+```
+
+Your `autoplay` attribute will be rendered on the element like this:
+
+```html
+<iframe autoplay="true"></iframe>
 ```
 
 ## Attributions:
