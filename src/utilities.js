@@ -231,28 +231,6 @@ export const proxyFunction = (callHandler, chainHandlers) => {
   return outerProxy;
 };
 
-export const proxyFunctionWithPropertyHandler = curry(
-  (propertyHandler, functionHandler) => (
-    new Proxy(functionHandler, {
-      get: (target, name) => {
-        const output = Reflect.get(target, name) ?? propertyHandler?.[name]
-        return output
-      }
-    })
-  )
-)
-
-export const proxyPassthroughFunction = (beforePassthrough) => (originalFn) => new Proxy(originalFn, {
-  get: (target, name) => {
-    if (Reflect.has(target, name)) beforePassthrough(name);
-    return Reflect.get(target, name);
-  },
-  apply: (target, context, givenArgs) => {
-    beforePassthrough();
-    return Reflect.apply(target, context, givenArgs);
-  }
-});
-
 // Conditional chain expression :) stop using if & else, just use this.
 // Usage: ```
 // const actuallyDoTheThing = (value) => value + " is more than nothing";
