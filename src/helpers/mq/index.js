@@ -15,7 +15,7 @@ import {
   isNumber,
   when,
   betterSet
-} from '../utilities';
+} from '../../utilities';
 
 const applyUnit = (unit = '') => (original) => (
   original |> when(isNumber).then(value => value.toString() + unit).otherwise(value => value.toString())

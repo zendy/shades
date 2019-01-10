@@ -153,7 +153,8 @@ Here are examples of most of the functionality built-in to Shades:
 ```js
 import React from 'react';
 import shades from '@bupa-digital/shades/react';
-import { style } from '@bupa-digital/shades/helpers';
+import style from '@bupa-digital/shades/utils.style';
+import mq from '@bupa-digital/shades/utils.mq';
 
 const colours = {
   button: {

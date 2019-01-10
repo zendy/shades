@@ -1,4 +1,4 @@
-import mq from './mq';
+import mq from './index.js';
 
 const expectString = (original) => expect(original.toString());
 

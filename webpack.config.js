@@ -30,7 +30,9 @@ module.exports = {
   entry: {
     lib: './src/shades.js',
     react: './src/with-react.js',
-    helpers: './src/helpers.js'
+    'utils.mq': './src/helpers/mq/index.js',
+    'utils.style': './src/helpers/style/index.js',
+    'utils.style/compat': './src/helpers/style/compat.js'
   },
   output: {
     path: __dirname,

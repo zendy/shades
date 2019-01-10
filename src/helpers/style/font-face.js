@@ -21,7 +21,7 @@ import {
   when,
   betterSet,
   includes,
-  stateful,
+  // stateful,
   proxyFunction,
   proxyPropertyGetter,
   anyOf,
@@ -30,15 +30,15 @@ import {
   lastItem
 } from '../utilities';
 
-const fontFaceStore = stateful({
-  index: 1,
-  cached: new Map()
-}, {
-  addToCache: ({ cached, index }, hashKey, parsedValue) => ({
-    cached: cached.set(hashKey, parsedValue),
-    index: index + 1
-  })
-});
+// const fontFaceStore = stateful({
+//   index: 1,
+//   cached: new Map()
+// }, {
+//   addToCache: ({ cached, index }, hashKey, parsedValue) => ({
+//     cached: cached.set(hashKey, parsedValue),
+//     index: index + 1
+//   })
+// });
 
 const fontFacePlainKeys = ['src', 'unicodeRange'];
 const isTuple           = allOf(isArray, propEq('length', 2));

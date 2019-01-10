@@ -1,12 +1,26 @@
-import style, { parseStyleSymbol } from './style';
-import selectorRegistry from '../registries/selectors';
+import style, { parseStyleSymbol } from './compat';
+import selectorRegistry from '../../registries/selectors';
 
 const expectString = (original) => expect(original.toString());
 const expectSymbol = (original) => expect(
   Symbol.keyFor(original.toString())
 );
 
-describe('style', () => {
+describe('style (compatibility version, not using proxies)', () => {
+  const RealProxy = Proxy;
+  beforeAll(() => {
+    global.Proxy = class extends RealProxy {
+      constructor() {
+        throw 'Proxy constructor should never be used';
+      }
+    }
+  });
+
+  afterAll(() => {
+    global.Proxy = RealProxy;
+  });
+
+
   it('generates pseudo-classes from property getters', () => {
     expectString(
       style.hover
@@ -51,10 +65,10 @@ describe('style', () => {
 
   it('has a method for generating custom or not-yet-supported pseudo-elements', () => {
     expectString(
-      style.element('valhalla')
+      style.elementOf('valhalla')
     ).toEqual('::valhalla');
     expectString(
-      style.element('firstFewParagraphs')
+      style.elementOf('firstFewParagraphs')
     ).toEqual('::first-few-paragraphs')
   });
 
@@ -92,67 +106,67 @@ describe('style', () => {
     describe('Attributes', () => {
       it('supports HTML attribute selectors', () => {
         expectString(
-          style.attr.title
+          style.attr('title')
         ).toEqual('[title]');
       });
 
       it('supports attribute selectors that specify a matching value', () => {
         expectString(
-          style.attr.href('https://example.org')
+          style.attr('href').equals('https://example.org')
         ).toEqual('[href="https://example.org"]');
       });
 
       it('supports partial value matching on attribute values', () => {
         expectString(
-          style.attr.href.contains('example')
+          style.attr('href').contains('example')
         ).toEqual('[href*="example"]');
 
         expectString(
-          style.attr.href.startsWith('#')
+          style.attr('href').startsWith('#')
         ).toEqual('[href^="#"]');
 
         expectString(
-          style.attr.href.endsWith('.org')
+          style.attr('href').endsWith('.org')
         ).toEqual('[href$=".org"]');
 
         expectSymbol(
-          style.attr.href.endsWithAny('.com', '.net', '.org')
+          style.attr('href').endsWithAny('.com', '.net', '.org')
         ).toEqual('[href$=".com"] || [href$=".net"] || [href$=".org"]');
 
         expectSymbol(
-          style.attr.type.anyOf('button', 'text', 'date', 'email')
+          style.attr('type').anyOf('button', 'text', 'date', 'email')
         ).toEqual('[type="button"] || [type="text"] || [type="date"] || [type="email"]');
 
         expectSymbol(
-          style.attr.href.startsWithAny('http', 'https', 'ftp')
+          style.attr('href').startsWithAny('http', 'https', 'ftp')
         ).toEqual('[href^="http"] || [href^="https"] || [href^="ftp"]');
       });
 
       it('supports data attribute selectors with the .data method', () => {
         expectString(
-          style.data.tooltip
+          style.data('tooltip')
         ).toEqual('[data-tooltip]');
       });
 
       it('supports partial value matching on data attributes', () => {
         expectSymbol(
-          style.data.url.endsWithAny('.com', '.net', '.org')
+          style.data('url').endsWithAny('.com', '.net', '.org')
         ).toEqual('[data-url$=".com"] || [data-url$=".net"] || [data-url$=".org"]');
 
         expectSymbol(
-          style.data.validation.anyOf('date', 'email', 'phone')
+          style.data('validation').anyOf('date', 'email', 'phone')
         ).toEqual('[data-validation="date"] || [data-validation="email"] || [data-validation="phone"]');
       });
 
       it('supports combinators on attribute selectors', () => {
         expectSymbol(
-          style.and(style.attr.src, style.attr.href.startsWith('https'))
+          style.and(style.attr('src'), style.attr('href').startsWith('https'))
         ).toEqual('[src] && [href^="https"]')
         expectSymbol(
-          style.or(style.attr.src, style.attr.href.startsWith('https'))
+          style.or(style.attr('src'), style.attr('href').startsWith('https'))
         ).toEqual('[src] || [href^="https"]')
         expectSymbol(
-          style.or(style.attr.src, style.attr.href.startsWithAny('http', 'https'))
+          style.or(style.attr('src'), style.attr('href').startsWithAny('http', 'https'))
         ).toEqual('[src] || [href^="http"] || [href^="https"]')
       });
     });
@@ -160,99 +174,18 @@ describe('style', () => {
     describe('Properties', () => {
       it('supports special syntax for matching props (similar to attributes)', () => {
         expectString(
-          style.prop.specialItem
+          style.prop('specialItem')
         ).toEqual('!!specialItem');
       });
       it('supports matching for multiple props at once', () => {
         expectSymbol(
-          style.props.all(style.prop.specialItem, style.prop.thingamabob)
+          style.props.all(style.prop('specialItem'), style.prop('thingamabob'))
         ).toEqual('!!specialItem && !!thingamabob')
       });
       it('supports matching against a subset of possible props', () => {
         expectSymbol(
-          style.props.any(style.prop.specialItem, style.prop.thingamabob)
+          style.props.any(style.prop('specialItem'), style.prop('thingamabob'))
         ).toEqual('!!specialItem || !!thingamabob')
-      });
-    });
-  });
-  describe.skip('Globals', () => {
-    describe('fontFace', () => {
-      it('should generate a font face style object that can be added lazily to a stylesheet', () => {
-        expect(
-          style.fontFace({
-            style: 'normal',
-            weight: 600,
-            src: [
-              ['local', 'Monserrat Semibold'],
-              ['local', 'Monserrat'],
-              ['woff', '/fonts/whatever.woff']
-            ]
-          })
-        ).toMatchObject({
-          fontFace: [
-            {
-              fontStyle: 'normal',
-              fontWeight: '600',
-              src: 'local("Monserrat Semibold"), local("Monserrat"), url(/fonts/whatever.woff) format("woff")'
-            }
-          ]
-        })
-      });
-      it('should allow a font family name to be specified', () => {
-        expect(
-          style.fontFace('Monserrat', {
-            style: 'normal',
-            weight: 600,
-            src: [
-              ['local', 'Monserrat Semibold'],
-              ['local', 'Monserrat'],
-              ['woff', '/fonts/whatever.woff']
-            ]
-          })
-        ).toMatchObject({
-          fontFace: [
-            {
-              fontFamily: 'Monserrat',
-              fontStyle: 'normal',
-              fontWeight: '600',
-              src: 'local("Monserrat Semibold"), local("Monserrat"), url(/fonts/whatever.woff) format("woff")'
-            }
-          ]
-        })
-      });
-      it('should allow multiple definitions in a single font face', () => {
-        expect(
-          style.fontFace({
-            style: 'normal',
-            weight: 600,
-            src: [
-              ['local', 'Monserrat Semibold'],
-              ['local', 'Monserrat'],
-              ['woff', '/fonts/whatever.woff']
-            ]
-          }, {
-            style: 'normal',
-            weight: 400,
-            src: [
-              ['local', 'Monserrat Regular'],
-              ['local', 'Monserrat'],
-              ['woff', '/fonts/whatever-regular.woff']
-            ]
-          })
-        ).toMatchObject({
-          fontFace: [
-            {
-              fontStyle: 'normal',
-              fontWeight: '600',
-              src: 'local("Monserrat Semibold"), local("Monserrat"), url(/fonts/whatever.woff) format("woff")'
-            },
-            {
-              fontStyle: 'normal',
-              fontWeight: '400',
-              src: 'local("Monserrat Regular"), local("Monserrat"), url(/fonts/whatever-regular.woff) format("woff")'
-            }
-          ]
-        })
       });
     });
   });

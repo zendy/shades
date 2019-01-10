@@ -3,7 +3,6 @@ import {
 } from 'ramda';
 
 import {
-  stateful,
   when,
   isSymbol,
   withMethods

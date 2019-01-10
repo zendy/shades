@@ -7,7 +7,8 @@ Example:
 ```js
 import React from 'react';
 import shades from '@bupa-digital/shades/react';
-import { mq, style } from '@bupa-digital/shades/helpers';
+import mq from '@bupa-digital/shades/utils.mq';
+import style from '@bupa-digital/shades/utils.style'
 
 export const ResponsiveButton = shades.button({
   border: '1px solid',

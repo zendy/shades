@@ -38,7 +38,6 @@ import { css, generateClassName } from './style-parser';
 import {
   safeJoinWith,
   shadesLog,
-  proxyFunctionWithPropertyHandler,
   withMethods,
   when,
   isString,

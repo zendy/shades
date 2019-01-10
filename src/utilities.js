@@ -210,6 +210,12 @@ export const proxyPropertyGetter = (genericHandler, originalValue = {}) => (
 export const withMethods = (handlerCreator) => (originalValue) => {
   const handlers = originalValue |> valueAsFunction(handlerCreator);
 
+  return Object.assign(originalValue, handlers);
+}
+
+export const withMethodsProxy = (handlerCreator) => (originalValue) => {
+  const handlers = originalValue |> valueAsFunction(handlerCreator);
+
   return new Proxy(originalValue, {
     get: (target, name) => (
       Reflect.get(target, name) ?? handlers?.[name]
@@ -277,7 +283,7 @@ export const when = (...predicates) => {
     // If predicate doesnt retun a truthy value, then just return the first
     // argument given to the whole expression
     onlyThen: (...truthyHandlers) => evaluateWith(truthyHandlers)(),
-    then: (...truthyHandlers) => proxyFunction(evaluateWith(truthyHandlers)(), {
+    then: (...truthyHandlers) => evaluateWith(truthyHandlers)() |> withMethods({
       // If the predicate returns truthy, call handleTruthy with the
       // last set of arguments, otherwise call handleFalsy
       otherwise: (...falsyHandlers) => evaluateWith(truthyHandlers)(falsyHandlers)
@@ -312,56 +318,6 @@ export const betterSet = (initialData = []) => {
 
   return outerMethods;
 };
-
-export const stateful = (initialValue, actions) => {
-  let _internalState = initialValue;
-  const reducers = Object.entries(actions).reduce((result, [name, actionFn]) => ({
-    ...result,
-    [name]: (...args) => {
-      const actionResult = actionFn(_internalState, ...args);
-
-      if (isObjectLiteral(_internalState)) {
-        const nextState = {
-          ..._internalState,
-          ...actionResult
-        }
-
-        return nextState;
-      }
-
-      return actionResult;
-    }
-  }), {});
-
-  const getState = (path) => {
-    if (isObjectLiteral(_internalState)) {
-      const clonedState = { ..._internalState };
-
-      if (path) return dotPath(path, clonedState);
-
-      return clonedState;
-    }
-    else if (isMap(_internalState) || _internalState?.get) {
-      if (path) return _internalState.get(path);
-      return _internalState;
-    }
-
-    return _internalState;
-  };
-
-  const innerSelf = proxyFunction(
-    _internalState,
-    {
-      lift: (handler) => {
-        _internalState = handler(reducers, getState) ?? _internalState;
-        return innerSelf;
-      },
-      getState
-    }
-  );
-
-  return innerSelf;
-}
 
 const joinArgs = (originalFn) => (...items) => items |> join(' ') |> originalFn;
 
@@ -407,21 +363,25 @@ export const shadesLog = (displayName = 'Shades') => {
       ...data
     ),
     deprecated: curry((originalName, originalFn) => originalFn |> when(shouldShowDebug).then(
-      proxyPassthroughFunction((propertyName) => (
+      (fnToWrap) => (...args) => {
         makeLogTitle(displayName).log(
           logColours.orange('Deprecation warning: '),
           logColours.purple(originalName), ' is deprecated.  Please check the documentation for more details.'
-        )
-      ))
+        );
+
+        return fnToWrap(...args);
+      }
     )),
     deprecatedAlternative: curry(
       (originalName, alternativeName, originalFn) => originalFn |> when(shouldShowDebug).then(
-        proxyPassthroughFunction((propertyName) => (
+        (fnToWrap) => (...args) => {
           makeLogTitle(displayName).log(
             logColours.orange('Deprecation warning: '),
             logColours.purple(originalName), ' is deprecated and has been replaced by ', logColours.purple(alternativeName), '.  Please check the documentation for more details.'
           )
-        ))
+
+          return fnToWrap(...args);
+        }
       )
     )
   }
@@ -442,11 +402,3 @@ export const getLoggers = ({ debug, displayName }) => {
     info:    runner(logger.info)
   });
 }
-
-export const msg = (enabled = false) => ({
-  deprecated: (titleText, originalFn) => originalFn |> proxyPassthroughFunction((propertyName) => {
-    const displayTitle = safeJoinWith('.')(titleText, propertyName);
-    const logger = shadesLog(`Shades#${displayTitle}`);
-    logger.warning('This method is deprecated.  Please check the documentation for details.');
-  })
-})

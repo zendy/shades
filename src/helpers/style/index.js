@@ -11,7 +11,7 @@ import {
   has
 } from 'ramda';
 
-import selectorRegistry from '../registries/selectors';
+import selectorRegistry from '../../registries/selectors';
 
 import {
   dasherize,
@@ -23,20 +23,19 @@ import {
   when,
   betterSet,
   includes,
-  stateful,
   proxyFunction,
   proxyPropertyGetter,
   anyOf,
   allOf,
   firstItem,
   lastItem
-} from '../utilities';
+} from '../../utilities';
 
 import {
   PSEUDO_SELECTORS,
   COMBINATORS,
   COMBINATOR_INSERTS
-} from './selector-types'
+} from '../selector-types'
 
 const isDescriptorSym    = Symbol('Compute Selector');
 const isDescriptor       = (value) => value?.[isDescriptorSym] ?? false;

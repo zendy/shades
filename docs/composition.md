@@ -7,7 +7,7 @@ Shades comes with a mechanism for defining "generic" style components that can b
 ```js
 import React from 'react';
 import shades from '@bupa-digital/shades';
-import { style } from '@bupa-digital/shades/helpers'
+import style from '@bupa-digital/shades/utils.style'
 
 const BigText = shades.generic({
   fontSize: '24px',

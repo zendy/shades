@@ -7,7 +7,7 @@ Example:
 ```js
 import React from 'react';
 import shades from '@bupa-digital/shades/react';
-import { style } from '@bupa-digital/shades/helpers';
+import style from '@bupa-digital/shades/utils.style';
 
 // A random collection of different style features
 const PseudoIcon = shades.i({

@@ -23,7 +23,7 @@
   ],
   "main": "./lib/index.js",
   "scripts": {
-    "purge": "rm -rf ./lib ./helpers ./react",
+    "purge": "rm -rf ./lib ./utils.mq ./utils.style ./react",
     "build": "yarn run purge; cross-env NODE_ENV=production webpack --config ./webpack.config.js",
     "build:dev": "yarn run purge; cross-env NODE_ENV=development webpack --config ./webpack.config.js",
     "test": "cross-env NODE_ENV=test jest '.spec.js' --colors",
