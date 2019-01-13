@@ -21,8 +21,6 @@ import {
   when,
   betterSet,
   includes,
-  // stateful,
-  proxyFunction,
   proxyPropertyGetter,
   anyOf,
   allOf,

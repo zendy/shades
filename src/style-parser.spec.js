@@ -350,11 +350,11 @@ describe('parseRules', () => {
         { dark: true },
         {
           color: 'blue',
-          [style.before]: {
+          [style.element.before]: {
             fontWeight: 'bold',
             color: 'purple'
           },
-          [style.after]: {
+          [style.element.after]: {
             [style.prop.dark]: {
               color: 'red'
             },
@@ -503,7 +503,7 @@ describe('stringifyRules', () => {
       [style.or(style.hover, style.focus)]: {
         [style.or(style.active, style.visited)]: {
           fontFamily: 'whatever',
-          [style.or(style.before, style.after)]: {
+          [style.or(style.element.before, style.element.after)]: {
             fontWeight: 'super-ultra-bold',
             [mq('screen').from(500)]: {
               fontFamily: 'helvetica-is-trendy'

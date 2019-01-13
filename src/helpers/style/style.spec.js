@@ -1,7 +1,13 @@
-import style, { parseStyleSymbol } from './index.js';
-import selectorRegistry from '../../registries/selectors';
+import style from './index.js';
 
-const expectString = (original) => expect(original.toString());
+import selectorRegistry, {
+  SPECIAL_TYPES
+} from '../../registries/selectors';
+
+const expectString = (original) => expect(
+  original.toString().replace(SPECIAL_TYPES.DESCRIPTOR.PREFIX, '')
+);
+
 const expectSymbol = (original) => expect(
   Symbol.keyFor(original.toString())
 );
@@ -51,10 +57,10 @@ describe('style', () => {
 
   it('has a method for generating custom or not-yet-supported pseudo-elements', () => {
     expectString(
-      style.element('valhalla')
+      style.elementOf('valhalla')
     ).toEqual('::valhalla');
     expectString(
-      style.element('firstFewParagraphs')
+      style.elementOf('firstFewParagraphs')
     ).toEqual('::first-few-paragraphs')
   });
 
@@ -64,8 +70,9 @@ describe('style', () => {
     ).toEqual(':not(:hover)');
   });
   it('supports the and operator as a method', () => {
-    expectSymbol(
-      style.and(style.hover, style.focus)
+    const result = style.and(style.hover, style.focus);
+    expectString(
+      result
     ).toEqual(':hover && :focus');
   });
   it('stores the descriptor that can be retrieved later', () => {
@@ -75,15 +82,15 @@ describe('style', () => {
     expect(last).toBe(first);
   })
   it('supports the or operator as a method', () => {
-    expectSymbol(
+    expectString(
       style.or(style.hover, style.visited)
     ).toEqual(':hover || :visited')
   });
   it('supports different combinations of and + or combinators', () => {
-    expectSymbol(
+    expectString(
       style.or(style.and(style.hover, style.focus), style.visited, style.active)
     ).toEqual(':hover && :focus || :visited || :active')
-    expectSymbol(
+    expectString(
       style.and(style.or(style.hover, style.focus), style.visited, style.active)
     ).toEqual(':hover || :focus && :visited && :active')
   });
@@ -98,7 +105,7 @@ describe('style', () => {
 
       it('supports attribute selectors that specify a matching value', () => {
         expectString(
-          style.attr.href('https://example.org')
+          style.attr.href.equals('https://example.org')
         ).toEqual('[href="https://example.org"]');
       });
 
@@ -115,15 +122,15 @@ describe('style', () => {
           style.attr.href.endsWith('.org')
         ).toEqual('[href$=".org"]');
 
-        expectSymbol(
+        expectString(
           style.attr.href.endsWithAny('.com', '.net', '.org')
         ).toEqual('[href$=".com"] || [href$=".net"] || [href$=".org"]');
 
-        expectSymbol(
+        expectString(
           style.attr.type.anyOf('button', 'text', 'date', 'email')
         ).toEqual('[type="button"] || [type="text"] || [type="date"] || [type="email"]');
 
-        expectSymbol(
+        expectString(
           style.attr.href.startsWithAny('http', 'https', 'ftp')
         ).toEqual('[href^="http"] || [href^="https"] || [href^="ftp"]');
       });
@@ -135,23 +142,23 @@ describe('style', () => {
       });
 
       it('supports partial value matching on data attributes', () => {
-        expectSymbol(
+        expectString(
           style.data.url.endsWithAny('.com', '.net', '.org')
         ).toEqual('[data-url$=".com"] || [data-url$=".net"] || [data-url$=".org"]');
 
-        expectSymbol(
+        expectString(
           style.data.validation.anyOf('date', 'email', 'phone')
         ).toEqual('[data-validation="date"] || [data-validation="email"] || [data-validation="phone"]');
       });
 
       it('supports combinators on attribute selectors', () => {
-        expectSymbol(
+        expectString(
           style.and(style.attr.src, style.attr.href.startsWith('https'))
         ).toEqual('[src] && [href^="https"]')
-        expectSymbol(
+        expectString(
           style.or(style.attr.src, style.attr.href.startsWith('https'))
         ).toEqual('[src] || [href^="https"]')
-        expectSymbol(
+        expectString(
           style.or(style.attr.src, style.attr.href.startsWithAny('http', 'https'))
         ).toEqual('[src] || [href^="http"] || [href^="https"]')
       });
@@ -164,12 +171,12 @@ describe('style', () => {
         ).toEqual('!!specialItem');
       });
       it('supports matching for multiple props at once', () => {
-        expectSymbol(
+        expectString(
           style.props.all(style.prop.specialItem, style.prop.thingamabob)
         ).toEqual('!!specialItem && !!thingamabob')
       });
       it('supports matching against a subset of possible props', () => {
-        expectSymbol(
+        expectString(
           style.props.any(style.prop.specialItem, style.prop.thingamabob)
         ).toEqual('!!specialItem || !!thingamabob')
       });

@@ -95,6 +95,8 @@ export const mapFilterRecord = (handlerFn, original) => (
   )
 );
 
+export const toString = (original) => original.toString();
+
 export const includes = contains;
 
 export const includedIn = flip(contains);
@@ -207,29 +209,25 @@ export const proxyPropertyGetter = (genericHandler, originalValue = {}) => (
   })
 );
 
+export const proxyCatchAll = (catchAllHandler, originalValue = {}) => (
+  new Proxy(originalValue, {
+    get: (target, name) => (
+      Reflect.get(target, name) ?? catchAllHandler(name)
+    )
+  })
+);
+
 export const withMethods = (handlerCreator) => (originalValue) => {
   const handlers = originalValue |> valueAsFunction(handlerCreator);
 
-  return Object.assign(originalValue, handlers);
+  const wrapper = (...args) => originalValue(...args);
+  // We had to move away from proxies unfortunately, for IE11 compatibility
+  // The following will apply both the handler object and the original
+  // value's enumerable properties to the new wrapper. This will mean
+  // that values with existing own properties (like React components)
+  // will still work.
+  return Object.assign(wrapper, handlers, originalValue);
 }
-
-export const withMethodsProxy = (handlerCreator) => (originalValue) => {
-  const handlers = originalValue |> valueAsFunction(handlerCreator);
-
-  return new Proxy(originalValue, {
-    get: (target, name) => (
-      Reflect.get(target, name) ?? handlers?.[name]
-    )
-  })
-}
-
-export const proxyFunction = (callHandler, chainHandlers) => {
-  const outerProxy = new Proxy(callHandler, {
-    get: (target, name) =>  chainHandlers?.[name] ?? Reflect.get(target, name)
-  });
-
-  return outerProxy;
-};
 
 // Conditional chain expression :) stop using if & else, just use this.
 // Usage: ```

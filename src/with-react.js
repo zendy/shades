@@ -112,7 +112,6 @@ const mapKeys = (mapper) => compose(
   toPairs
 )
 
-const deleteString = flip(replace)('');
 const sliceFrom = flip(slice)(Infinity);
 
 const htmlPrefix = 'html-';

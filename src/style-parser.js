@@ -1,3 +1,7 @@
+// We import this polyfill explicitly because it is used in autoprefixer
+// and IE11 doesnt have a native implementation.
+import 'core-js/es6/math';
+
 import objectHash from 'object-hash';
 
 import {
@@ -73,7 +77,11 @@ import {
   stylesheetRegistry
 } from './registries/stylesheet';
 
-import selectorRegistry from './registries/selectors';
+import selectorRegistry, {
+  isDescriptorSelector,
+  isPropertySelector,
+  removePropertySelectorPrefix
+} from './registries/selectors';
 import { COMBINATORS } from './helpers/selector-types';
 
 const asPseudoSelector = (key) => `:${dasherize(key)}`;
@@ -101,7 +109,6 @@ const stopRightThereCriminalScum = (validTypes, givenKey) => (givenValue) => {
 const isSelector         = startsWithAny('.', '#', '>');
 const isAtRule           = startsWith('@');
 const isPseudoSelector   = startsWith(':');
-const isPropertySelector = startsWith('!!');
 const isSelectorOrPseudo = anyPass([isSelector, isPseudoSelector]);
 const isBrowserPrefixed  = startsWith('-');
 const isPseudoElement    = isOneOf(
@@ -118,7 +125,7 @@ const isPseudoElement    = isOneOf(
 );
 
 // Special property selectors typically start with !!, so this removes those
-const stripPropertyBangs = when(isPropertySelector).then(getSubstringAfter(2))
+// const removePropertySelectorPrefix = when(isPropertySelector).then(getSubstringAfter(2))
 // Ensures content properties have double quotes around them
 const wrapContentString = (key) => when(equals('content', key)).then(JSON.stringify);
 
@@ -218,7 +225,7 @@ const combinators = (parentSelector, { props, ...extraCombinators }) => (results
     extendSelector: (trailingSelector) => parentSelector |> map(appendWith(trailingSelector)),
     // pseudoElementSelector :: String -> Selector PseudoSelector
     pseudoElementSelector: (pseudoName) => parentSelector |> map(appendWith(asPseudoElement(pseudoName))),
-    propExists: (targetProp) => has(stripPropertyBangs(targetProp), props),
+    propExists: (targetProp) => has(removePropertySelectorPrefix(targetProp), props),
     props,
     results,
     ...extraCombinators
@@ -260,7 +267,7 @@ const parseStyleMetaData = (ruleResponder) => {
         asNewParser
       });
 
-      const isStyleSymbol         = isSymbol(key);
+      const isSpecialSelector     = isDescriptorSelector(key);
       const isFunctionRule        = isFunction(value);
       const hasObjectLiteral      = isObjectLiteral(value);
       const hasNestedRules        = hasObjectLiteral || isFunctionRule;
@@ -280,7 +287,7 @@ const parseStyleMetaData = (ruleResponder) => {
       );
 
       const ruleType = {
-        styleSymbol:      isStyleSymbol,
+        specialSelector:  isSpecialSelector,
         propertyMatch:    isPropertyMatch,
         atRule:           isAtRuleBlock,
         combinedSelector: isCombiningSelector,
@@ -366,7 +373,7 @@ export const parseAllStyles = parseStyleMetaData({
     return computedStyle && addStyle(key, computedStyle);
   }),
   propertyMatch: ({ parseNested, parentSelector, props, propExists }) => (key, value) => {
-    const propName = key |> stripPropertyBangs;
+    const propName = key |> removePropertySelectorPrefix;
 
     if (props |> propExistsAndPasses(propName, not(isUndefinedOrFalse))) return (
       value
@@ -375,8 +382,8 @@ export const parseAllStyles = parseStyleMetaData({
     )
     else parserLog.info(`Property not found: "${propName}"`);
   },
-  styleSymbol: ({ extendSelector, props, parseNested, parentSelector, propExists }) => (
-    (symbolKey, styleBlock) => {
+  specialSelector: ({ extendSelector, props, parseNested, parentSelector, propExists }) => (
+    (specialKey, styleBlock) => {
       const parseStyleBlockWith = (selector) => (
         styleBlock
         |> parseNested(selector)
@@ -393,15 +400,15 @@ export const parseAllStyles = parseStyleMetaData({
             styleBlock |> parseNested(parentSelector)
           )
         },
-        [COMBINATORS.COMBINATOR_OR]: (targetAttrs) => (
-          styleBlock |> parseNested(targetAttrs |> chain(extendSelector))
+        [COMBINATORS.COMBINATOR_OR]: (targetSelectors) => (
+          styleBlock |> parseNested(targetSelectors |> chain(extendSelector))
         ),
-        [COMBINATORS.COMBINATOR_AND]: (targetAttrs) => (
-          styleBlock |> parseNested(targetAttrs |> join('') |> extendSelector)
+        [COMBINATORS.COMBINATOR_AND]: (targetSelectors) => (
+          styleBlock |> parseNested(targetSelectors |> join('') |> extendSelector)
         )
       }
 
-      const { kind, value } = selectorRegistry.getDescriptor(symbolKey);
+      const { kind, value } = selectorRegistry.getDescriptor(specialKey);
 
       return handlers?.[kind]?.(value);
     }

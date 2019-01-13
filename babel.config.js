@@ -1,10 +1,22 @@
 const isTestEnv = process.env.NODE_ENV === 'test';
 
-const enableModuleTranspilationForTesting = isTestEnv && { modules: 'umd' };
+const config = (original) => ({
+  when: (testValue) => {
+    if (!!testValue) return original;
+    return {};
+  }
+})
 
 module.exports = {
   presets: [
-    ['@babel/preset-env', enableModuleTranspilationForTesting || {}],
+    ['@babel/preset-env', {
+      ...config({ modules: 'umd' }).when(isTestEnv),
+      useBuiltIns: 'entry',
+      include: [
+        'es6.math.*',
+        'es6.object.assign'
+      ]
+    }],
     '@babel/preset-react'
   ],
   plugins: [
