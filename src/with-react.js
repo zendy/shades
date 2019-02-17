@@ -57,7 +57,7 @@ const mapKeys = (mapper) => compose(
   fromPairs,
   map(([key, value]) => [mapper(key), value]),
   toPairs
-)
+);
 const sliceFrom = flip(slice)(Infinity);
 const removeHtmlPrefixes = mapKeys(
   when(startsWith(htmlPrefix)).then(sliceFrom(htmlPrefix.length))
@@ -167,7 +167,7 @@ const withComponent = genericElement |> shadesLog().deprecatedAlternative('.with
 const domHelpers = htmlTagNames.reduce((result, tag) => ({
   ...result,
   [tag]: (
-    extendableStyleFactory(tag,shadesElement)
+    extendableStyleFactory(tag, shadesElement)
   )
 }), { withComponent, generic: genericElement, Provider: Shades });
 
