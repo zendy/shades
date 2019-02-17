@@ -24,6 +24,7 @@ const developmentConfig = isDevelopment && {
 
 const environmentConfig = developmentConfig || {
   mode: 'production',
+  devtool: false,
   optimization: {
     minimize: true,
     minimizer: [

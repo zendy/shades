@@ -61,6 +61,11 @@
     "is-callable": "^1.1.4",
     "jest": "^23.6.0",
     "jest-enzyme": "^7.0.1",
+    "prop-types": "^15.6.1",
+    "ramda": "^0.25.0",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0",
+    "recompose": "^0.26.0",
     "regenerator-runtime": "0.11.1",
     "terser-webpack-plugin": "^1.2.2",
     "webpack": "4.6.0",
@@ -85,12 +90,7 @@
     "immutable": "^4.0.0-rc.9",
     "react-html-attributes": "^1.4.1",
     "svg-tag-names": "^1.1.1",
-    "tiza": "^2.1.0",
-    "prop-types": "^15.6.1",
-    "ramda": "^0.25.0",
-    "react": "^16.4.0",
-    "react-dom": "^16.4.0",
-    "recompose": "^0.26.0"
+    "tiza": "^2.1.0"
   },
   "jest": {
     "verbose": true,
