@@ -1,12 +1,13 @@
 import React        from 'react';
 import htmlTagNames from 'html-tag-names'
 import PropTypes    from 'prop-types';
+import hasher from 'hash-it';
 import shouldForwardProperty from './should-forward-prop';
-import objectHash from 'object-hash';
 
 import {
   curry,
   compose,
+  pipe,
   pickBy,
   prop,
   either,
@@ -45,7 +46,30 @@ import {
   firstItem
 } from './utilities';
 
+const isShades        = prop('__isShadesElement');
+const getShadesStyles = prop('__styleRules');
+const badConfigMsg    = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
+const htmlPrefix      = 'html-';
+
 const joinWithSpace = safeJoinWith(' ');
+
+const mapKeys = (mapper) => compose(
+  fromPairs,
+  map(([key, value]) => [mapper(key), value]),
+  toPairs
+)
+const sliceFrom = flip(slice)(Infinity);
+const removeHtmlPrefixes = mapKeys(
+  when(startsWith(htmlPrefix)).then(sliceFrom(htmlPrefix.length))
+);
+
+// TODO: combine these operations for improved performance
+const processAndForwardDomAttributes = (elementName) => (
+  pipe(
+    pickBy((val, key) => shouldForwardProperty(elementName, key)),
+    removeHtmlPrefixes
+  )
+)
 
 /**
  * Shades context Provider
@@ -81,94 +105,70 @@ const applyShadesContext = setStatic('contextTypes', {
   prefixer: PropTypes.oneOfType([PropTypes.bool, PropTypes.object])
 })
 
-const badConfigMsg    = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
-const isShades        = prop('__isShadesElement');
-const getShadesStyles = prop('__styleRules');
+const extendableStyleFactory = (name, extendableThing) => (styleRules = {}) => {
+  const classIdentityHash = hasher([name, styleRules]);
+  const classIdentity     = `shades-element-${classIdentityHash}`;
+  const classPrefix       = `shades-${name}`;
+  const displayName       = `shades.${name}`;
 
-const shadesGeneralLogger = shadesLog('Shades.Provider');
+  return (
+    extendableThing(name, {
+      displayName,
+      classPrefix,
+      classIdentity,
+      styleRules
+    }) |> withMethods((originalComponent) => ({
+      __isShadesElement: true,
+      __styleRules: styleRules,
+      __classIdentity: classIdentity,
+      extend: (...moreStyles) => {
+        const normalisedStyles = moreStyles |> map(when(isShades).then(getShadesStyles));
 
-const extendableStyleFactory = (metaData, extendableThing) => (styleRules = {}) => (
-  extendableThing(styleRules) |> withMethods((originalComponent) => ({
-    __isShadesElement: true,
-    __shadesMetadata: metaData,
-    __styleRules: styleRules,
-    extend: (...moreStyles) => {
-      const normalisedStyles = moreStyles |> map(when(isShades).then(getShadesStyles));
+        return extendableStyleFactory(name, extendableThing)(
+          normalisedStyles |> reduce(mergeDeepRight, styleRules)
+        );
+      }
+    }))
+  )
+}
 
-      return extendableStyleFactory(metaData, extendableThing)(
-        normalisedStyles |> reduce(mergeDeepRight, styleRules)
-      );
-    },
-    match: shadesGeneralLogger.deprecated('.match')((matcherRules) => extendableStyleFactory(metaData, extendableThing)({
-      ...styleRules,
-      '__match': matcherRules
-    })),
-  }))
-)
-
-const mapKeys = (mapper) => compose(
-  fromPairs,
-  map(([key, value]) => [mapper(key), value]),
-  toPairs
-)
-
-const sliceFrom = flip(slice)(Infinity);
-
-const htmlPrefix = 'html-';
-
-const removeHtmlPrefixes = mapKeys(
-  when(startsWith(htmlPrefix)).then(sliceFrom(htmlPrefix.length))
-)
-
-const shadesElement = (innerElement, { displayName, baseClass }) => (styleRules) => (
+const shadesElement = (innerElement, { displayName, classPrefix, classIdentity, styleRules }) => (
   applyShadesContext(
     ({ children, className, ...props }, { targetDom, showDebug, prefixer }) => {
       if (!targetDom) throw new Error(badConfigMsg);
 
       const computedClassname = css({
-        className:   baseClass,
+        className:   classPrefix,
         target:      targetDom,
         showDebug,
         prefixer,
         props
       }, styleRules);
 
-      // TODO: combine these operations for improved performance
       const propsToForward = props |> when(isString(innerElement)).then(
-        pickBy((val, key) => shouldForwardProperty(innerElement, key)),
-        removeHtmlPrefixes
+        processAndForwardDomAttributes(innerElement)
       );
 
       return React.createElement(innerElement, {
         ...propsToForward,
-        className: joinWithSpace(computedClassname, className),
+        className: joinWithSpace(computedClassname, classIdentity, className),
       }, children);
     }
   ) |> setDisplayName(displayName)
 );
 
-const makeShadesDisplayName = (tagName) => `shades.${tagName}`;
-const makeShadesBaseClass = (tagName) => `shades-${tagName}`;
+const genericElement = extendableStyleFactory(
+  'generic',
+  (name, metaData) => (WrappedComponent) => shadesElement(WrappedComponent, metaData)
+)
 
-const genericStyles = extendableStyleFactory({
-  isGeneric: true
-}, (styleRules) => (WrappedComponent) => styleRules |> shadesElement(WrappedComponent, {
-  displayName: makeShadesDisplayName('generic'),
-  baseClass: makeShadesBaseClass('generic')
-}))
-
-const withComponent = genericStyles |> shadesLog().deprecatedAlternative('.withComponent', '.generic');
+const withComponent = genericElement |> shadesLog().deprecatedAlternative('.withComponent', '.generic');
 
 const domHelpers = htmlTagNames.reduce((result, tag) => ({
   ...result,
   [tag]: (
-    extendableStyleFactory({
-      isGeneric: false
-    }, shadesElement(tag, {
-      displayName: makeShadesDisplayName(tag),
-      baseClass: makeShadesBaseClass(tag)
-    }))
+    extendableStyleFactory(tag,shadesElement)
   )
-}), { withComponent, generic: genericStyles, Provider: Shades });
+}), { withComponent, generic: genericElement, Provider: Shades });
 
 export default domHelpers;

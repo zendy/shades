@@ -25,7 +25,7 @@ exports[`Shades DOM Renders without incident 1`] = `
       dark={true}
     >
       <h1
-        className="shades-h1-229e27bf4f232311c23181b9c2eaf3fb287c58f6"
+        className="shades-h1-14571595172437 shades-element-10496356530578"
       >
         Hello
       </h1>
@@ -35,24 +35,24 @@ exports[`Shades DOM Renders without incident 1`] = `
 `;
 
 exports[`Shades DOM allows extending multiple generic components 1`] = `
-".shades-a-59a41300b6cf1bae2002c77fd3323a18d3ce4264 {
+".shades-a-650341851635 {
   font-size: 12px;
   color: blue;
 }
 
-.shades-a-59a41300b6cf1bae2002c77fd3323a18d3ce4264:hover {
+.shades-a-650341851635:hover {
   border: 1px solid #ccc;
   text-decoration: underline;
 }"
 `;
 
 exports[`Shades DOM allows extending multiple generic components 2`] = `
-".shades-a-e96f6fb466588b3482c64353f2ecf45dec020732 {
+".shades-a-13747910882693 {
   font-size: 12px;
   color: red;
 }
 
-.shades-a-e96f6fb466588b3482c64353f2ecf45dec020732:hover {
+.shades-a-13747910882693:hover {
   border: 1px solid #ccc;
   -webkit-text-decoration: dotted;
   text-decoration: dotted;
@@ -60,7 +60,7 @@ exports[`Shades DOM allows extending multiple generic components 2`] = `
 `;
 
 exports[`Shades DOM properly merges extended style rules 1`] = `
-".shades-span-c7d26f766002d615e35b6c474bb80cfbcbfac5df {
+".shades-span-17154989453634 {
   background: black;
   border: 2px solid purple;
   color: white;
@@ -68,7 +68,7 @@ exports[`Shades DOM properly merges extended style rules 1`] = `
   text-transform: uppercase;
 }
 
-.shades-span-c7d26f766002d615e35b6c474bb80cfbcbfac5df:hover {
+.shades-span-17154989453634:hover {
   text-decoration: underline;
   border-color: green;
 }"
@@ -95,15 +95,26 @@ exports[`Shades DOM renders a block matcher without incident 1`] = `
       </span>
     }
   >
-    <shades.a
-      dark={true}
-    >
-      <a
-        className="shades-a-2e5a42365d82c7afb910df11f4f4a210fd7b6a61"
+    <div>
+      <shades.a
+        dark={true}
       >
-        Hello
-      </a>
-    </shades.a>
+        <a
+          className="shades-a-17361503962046 shades-element-13128135507417"
+        >
+          Original Linky
+        </a>
+      </shades.a>
+      <shades.a
+        dark={true}
+      >
+        <a
+          className="shades-a-17361503962046 shades-element-13128135507417"
+        >
+          DUPLICATE linky
+        </a>
+      </shades.a>
+    </div>
   </Component>
 </Shades.Provider>
 `;
@@ -129,9 +140,43 @@ exports[`Shades DOM renders a block matcher without incident 2`] = `
       </span>
     }
   >
+    <shades.a
+      dark={true}
+    >
+      <a
+        className="shades-a-17361503962046 shades-element-13128135507417"
+      >
+        Hello
+      </a>
+    </shades.a>
+  </Component>
+</Shades.Provider>
+`;
+
+exports[`Shades DOM renders a block matcher without incident 3`] = `
+<Shades.Provider
+  prefixer={true}
+  to={
+    <span>
+      <style
+        data-shades=""
+      />
+    </span>
+  }
+>
+  <Component
+    prefixer={true}
+    to={
+      <span>
+        <style
+          data-shades=""
+        />
+      </span>
+    }
+  >
     <shades.a>
       <a
-        className="shades-a-04e364fd62e2ed558a4f6cf657ba7f4287a09c02"
+        className="shades-a-8244443886614 shades-element-13128135507417"
       >
         No Props!
       </a>
@@ -163,10 +208,10 @@ exports[`Shades DOM should allow styles to apply to custom components 1`] = `
   >
     <shades.generic>
       <Component
-        className="shades-generic-14ac31c0dced087664878a551157de18d7788d96"
+        className="shades-generic-13196722402662 shades-element-2116950705577"
       >
         <div
-          className="shades-generic-14ac31c0dced087664878a551157de18d7788d96"
+          className="shades-generic-13196722402662 shades-element-2116950705577"
         >
           Hello this is a test
         </div>

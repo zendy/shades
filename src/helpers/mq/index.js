@@ -23,11 +23,6 @@ const applyUnit = (unit = '') => (original) => (
 
 const transformInputValues = (mapping) => (givenValue) => mapping?.[givenValue] ?? givenValue;
 
-const transformKeywords = (allowedValues, defaultValue) => (givenValue) => {
-  if (allowedValues.includes(givenValue |> toLower)) return givenValue;
-  return defaultValue;
-}
-
 const transformFalseTo = (replacementValue) => (givenValue) => {
   if (givenValue === false) return replacementValue;
   return givenValue;

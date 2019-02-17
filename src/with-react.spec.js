@@ -3,7 +3,7 @@ import Enzyme, { mount, render } from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 
 import shades from './with-react';
-import { states, mq, style } from './helpers';
+import { mq, style } from './helpers';
 
 Enzyme.configure({ adapter: new Adapter() });
 
@@ -80,10 +80,12 @@ describe('Shades DOM', () => {
 
     const duplicateSubject = mountShades(
       <div>
-        <Linky dark>Hello</Linky>
-        <LinkyDuplicate dark>Hello</LinkyDuplicate>
+        <Linky dark>Original Linky</Linky>
+        <LinkyDuplicate dark>DUPLICATE linky</LinkyDuplicate>
       </div>
     );
+
+    expect(duplicateSubject.rendered).toMatchSnapshot();
 
     const darkSubject = mountShades(
       <Linky dark>Hello</Linky>
@@ -298,6 +300,4 @@ describe('Shades DOM', () => {
     // in these unit tests yet (because of the leaky dom stuff)
     expect(subject.stylesheet).toMatchSnapshot();
   });
-
-
 });

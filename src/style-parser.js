@@ -1,8 +1,7 @@
+import 'core-js/es6/math';
 // We import this polyfill explicitly because it is used in autoprefixer
 // and IE11 doesnt have a native implementation.
-import 'core-js/es6/math';
-
-import objectHash from 'object-hash';
+import hasher from 'hash-it';
 
 import {
   OrderedMap
@@ -483,7 +482,7 @@ export const stringifyRules = (rules) => (
 
 const asClassName = unless(startsWith('.'), concat('.'));
 
-const computeClassnameHash = (...data) => objectHash(data);
+const computeClassnameHash = (...data) => hasher(data);
 const computeClassname = (className, ...data) => ([
   className,
   computeClassnameHash(className, ...data)
