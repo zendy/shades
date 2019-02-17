@@ -22,7 +22,8 @@ import globalScope from './global-scope';
 
 export const SPECIAL_TYPES = {
   PROPERTY: {
-    PREFIX: '!!'
+    PREFIX: '!!',
+    NAME: 'special-types.property'
   },
   DESCRIPTOR: {
     PREFIX: '__DESCRIPTOR__: '
@@ -64,12 +65,11 @@ export const createDescriptor = (kind, stringIdentifier) => (value) => {
     value,
     key: computedKey,
     __meta__: {
-      stringIdentifier,
       computedKey
     },
     toString: () => computedKey |> asDescriptorIdentifier
-  }
-}
+  };
+};
 
 const selectorRegistry = globalScope.getOrCreate(selectorRegistryKey, () => {
   const dataStore = new Map();
@@ -84,6 +84,10 @@ const selectorRegistry = globalScope.getOrCreate(selectorRegistryKey, () => {
       dataStore.set(itemKey, item);
 
       return item;
+    },
+    hasDescriptor: (originalKey) => {
+      const key = originalKey |> when(either(isString, isSymbol)).otherwise(toString);
+      return dataStore.has(key);
     },
     getDescriptor: (originalKey) => {
       const key = originalKey |> when(either(isString, isSymbol)).otherwise(toString);

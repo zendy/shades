@@ -77,8 +77,6 @@ const createCombinator = (kind) => (...data) => {
     |> join(` ${COMBINATOR_INSERTS[kind]} `)
   );
 
-  // console.log('createCombinator', { kind, computedKey, stringifiedData, data })
-
   return stringifiedData |> createAndStoreDescriptor(
     kind,
     computedKey

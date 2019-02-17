@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
+const TerserPlugin = require('terser-webpack-plugin');
 const path = require('path');
 
 const moduleRule = (target, loader) => ({
@@ -22,7 +23,16 @@ const developmentConfig = isDevelopment && {
 }
 
 const environmentConfig = developmentConfig || {
-  mode: 'production'
+  mode: 'production',
+  devtool: false,
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        parallel: true
+      })
+    ]
+  }
 };
 
 module.exports = {
@@ -42,15 +52,19 @@ module.exports = {
   },
   externals: [nodeExternals({
     modulesFromFile: true,
-    whitelist: (value) => value.includes('@babel')
+    whitelist: (value) => value.includes('@babel') || value.includes('core-js')
   })],
   module: {
     rules: [
       moduleRule(/\.js$/, 'babel-loader')
     ]
   },
-  plugins: [new webpack.DefinePlugin({
-    'process.env.NODE_ENV': JSON.stringify(nodeEnv),
-    'process.env.isDevelopment': JSON.stringify(isDevelopment)
-  })]
+  plugins: [
+    new webpack.optimize.ModuleConcatenationPlugin(),
+    new webpack.HashedModuleIdsPlugin(),
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'process.env.isDevelopment': JSON.stringify(isDevelopment)
+    })
+  ]
 }
