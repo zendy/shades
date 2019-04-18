@@ -45,7 +45,12 @@ const createElement = (tagName) => {
 const fastInsertRule = curry(
   (target, rule) => {
     const index = target?.cssRules?.length ?? 1;
-    return target?.insertRule(rule, index) ?? target?.addRule(rule);
+
+    try {
+      return target?.insertRule(rule, index) ?? target?.addRule(rule);
+    } catch (error) {
+      return slowInsertRule(target, rule);
+    }
   }
 );
 

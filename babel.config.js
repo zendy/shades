@@ -10,7 +10,8 @@ const config = (original) => ({
 module.exports = {
   presets: [
     ['@babel/preset-env', {
-      ...config({ modules: 'umd' }).when(isTestEnv),
+      // ...config({ modules: 'umd' }).when(isTestEnv),
+      modules: 'umd',
       useBuiltIns: 'usage',
       include: [
         'es6.math.*',
