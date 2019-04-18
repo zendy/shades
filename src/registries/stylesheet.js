@@ -19,6 +19,8 @@ const stylesheetRegistryKey = Symbol.for('Shades: Stylesheet Registry');
 const styleCacheKey         = Symbol.for('Shades: Style Cache');
 const stylesheetAttribute   = 'data-shades';
 
+const devLog = when(process.env.isDevelopment).then((...args) => console.log(...args))
+
 const andReturn = (valueToReturn) => () => valueToReturn;
 const addToMap = (dataStore) => curry((key, value) => dataStore.set(key, value) && value);
 
@@ -44,12 +46,13 @@ const createElement = (tagName) => {
 
 const fastInsertRule = curry(
   (target, rule) => {
-    const index = target?.cssRules?.length ?? 1;
-
     try {
-      return target?.insertRule(rule, index) ?? target?.addRule(rule);
+      const sheet = target?.sheet;
+      const index = sheet?.cssRules?.length ?? 1;
+
+      return sheet?.insertRule(rule, index) ?? sheet?.addRule(rule);
     } catch (error) {
-      return slowInsertRule(target, rule);
+      devLog('The current browser engine doesnt support this selector:', rule);
     }
   }
 );
@@ -60,7 +63,7 @@ const slowInsertRule = curry(
 
 const appendRule = (
   when(!process?.env?.isDevelopment)
-    .then(prop('sheet'), fastInsertRule)
+    .then(fastInsertRule)
     .otherwise(slowInsertRule)
 );
 
