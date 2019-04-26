@@ -43,13 +43,14 @@ import {
   when,
   isString,
   not,
-  firstItem
+  firstItem,
+  dotPath
 } from './utilities';
 
-const isShades        = prop('__isShadesElement');
-const getShadesStyles = prop('__styleRules');
-const badConfigMsg    = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
-const htmlPrefix      = 'html-';
+const isShades     = prop('isShadesElement');
+const getStyles    = dotPath('meta.styles');
+const badConfigMsg = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
+const htmlPrefix   = 'html-';
 
 const joinWithSpace = safeJoinWith(' ');
 
@@ -111,28 +112,38 @@ const extendableStyleFactory = (name, extendableThing) => (styleRules = {}) => {
   const classPrefix       = `shades-${name}`;
   const displayName       = `shades.${name}`;
 
-  return (
-    extendableThing(name, {
+  const expandShadesElement = withMethods((originalComponent) => ({
+    isShadesElement: true,
+    meta: {
+      styles: styleRules,
+      identity: classIdentity
+    },
+    extend: (...moreStyles) => {
+      const normalisedStyles = moreStyles |> map(when(isShades).then(getStyles));
+
+      return extendableStyleFactory(name, extendableThing)(
+        normalisedStyles |> reduce(mergeDeepRight, styleRules)
+      );
+    }
+  }));
+
+  if (!extendableThing) {
+    return expandShadesElement(
+      (Component) => extendableStyleFactory(name, shadesElement(Component))(styleRules)
+    )
+  }
+
+  return expandShadesElement(
+    extendableThing({
       displayName,
       classPrefix,
       classIdentity,
       styleRules
-    }) |> withMethods((originalComponent) => ({
-      __isShadesElement: true,
-      __styleRules: styleRules,
-      __classIdentity: classIdentity,
-      extend: (...moreStyles) => {
-        const normalisedStyles = moreStyles |> map(when(isShades).then(getShadesStyles));
-
-        return extendableStyleFactory(name, extendableThing)(
-          normalisedStyles |> reduce(mergeDeepRight, styleRules)
-        );
-      }
-    }))
+    })
   )
 }
 
-const shadesElement = (innerElement, { displayName, classPrefix, classIdentity, styleRules }) => (
+const shadesElement = (innerElement) => ({ displayName, classPrefix, classIdentity, styleRules }) => (
   applyShadesContext(
     ({ children, className, ...props }, { targetDom, showDebug, prefixer }) => {
       if (!targetDom) throw new Error(badConfigMsg);
@@ -157,17 +168,14 @@ const shadesElement = (innerElement, { displayName, classPrefix, classIdentity, 
   ) |> setDisplayName(displayName)
 );
 
-const genericElement = extendableStyleFactory(
-  'generic',
-  (name, metaData) => (WrappedComponent) => shadesElement(WrappedComponent, metaData)
-)
+const genericElement = extendableStyleFactory('generic')
 
 const withComponent = genericElement |> shadesLog().deprecatedAlternative('.withComponent', '.generic');
 
 const domHelpers = htmlTagNames.reduce((result, tag) => ({
   ...result,
   [tag]: (
-    extendableStyleFactory(tag, shadesElement)
+    extendableStyleFactory(tag, shadesElement(tag))
   )
 }), { withComponent, generic: genericElement, Provider: Shades });
 
