@@ -214,9 +214,46 @@ describe('Shades DOM', () => {
     expect(subjectSecondary.stylesheet).toMatchSnapshot();
   });
 
+  it('allows generic components to be extended', () => {
+    const Primary = shades.generic({
+      width: 10,
+      color: 'blue'
+    });
+
+    expect(Primary.extend).toBeDefined();
+    expect(Primary.__styleRules).toHaveProperty('color', 'blue');
+
+    const ExtendedPrimary = Primary.extend({
+      color: 'purple'
+    });
+
+    expect(ExtendedPrimary.__styleRules).toHaveProperty('color', 'purple');
+  });
+
+
+  it('allows generic elements to be extended before and after component wrapping', () => {
+    const Primary = shades.generic({
+      width: 10,
+      color: 'blue'
+    });
+
+    const Secondary = Primary(({ className, foobar }) => (
+      <div className={className}>Foobar is {foobar}</div>
+    ));
+
+    expect(Secondary.__styleRules).toHaveProperty('color', 'blue');
+
+    expect(Secondary.extend).toBeDefined();
+
+    const Tertiary = Secondary.extend({
+      color: 'purple'
+    });
+
+    expect(Tertiary.__styleRules).toHaveProperty('color', 'purple');
+  });
 
   it('should allow styles to apply to custom components', () => {
-    const SuperStyle = shades.withComponent({
+    const SuperStyle = shades.generic({
       color: 'blue',
       fontWeight: 'bold',
       [style.prop.href]: {
