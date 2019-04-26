@@ -221,13 +221,13 @@ describe('Shades DOM', () => {
     });
 
     expect(Primary.extend).toBeDefined();
-    expect(Primary.__styleRules).toHaveProperty('color', 'blue');
+    expect(Primary.meta.styles).toHaveProperty('color', 'blue');
 
     const ExtendedPrimary = Primary.extend({
       color: 'purple'
     });
 
-    expect(ExtendedPrimary.__styleRules).toHaveProperty('color', 'purple');
+    expect(ExtendedPrimary.meta.styles).toHaveProperty('color', 'purple');
   });
 
 
@@ -241,7 +241,7 @@ describe('Shades DOM', () => {
       <div className={className}>Foobar is {foobar}</div>
     ));
 
-    expect(Secondary.__styleRules).toHaveProperty('color', 'blue');
+    expect(Secondary.meta.styles).toHaveProperty('color', 'blue');
 
     expect(Secondary.extend).toBeDefined();
 
@@ -249,7 +249,7 @@ describe('Shades DOM', () => {
       color: 'purple'
     });
 
-    expect(Tertiary.__styleRules).toHaveProperty('color', 'purple');
+    expect(Tertiary.meta.styles).toHaveProperty('color', 'purple');
   });
 
   it('should allow styles to apply to custom components', () => {

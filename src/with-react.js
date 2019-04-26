@@ -43,13 +43,14 @@ import {
   when,
   isString,
   not,
-  firstItem
+  firstItem,
+  dotPath
 } from './utilities';
 
-const isShades        = prop('__isShadesElement');
-const getShadesStyles = prop('__styleRules');
-const badConfigMsg    = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
-const htmlPrefix      = 'html-';
+const isShades     = prop('isShadesElement');
+const getStyles    = dotPath('meta.styles');
+const badConfigMsg = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
+const htmlPrefix   = 'html-';
 
 const joinWithSpace = safeJoinWith(' ');
 
@@ -112,11 +113,13 @@ const extendableStyleFactory = (name, extendableThing) => (styleRules = {}) => {
   const displayName       = `shades.${name}`;
 
   const expandShadesElement = withMethods((originalComponent) => ({
-    __isShadesElement: true,
-    __styleRules: styleRules,
-    __classIdentity: classIdentity,
+    isShadesElement: true,
+    meta: {
+      styles: styleRules,
+      identity: classIdentity
+    },
     extend: (...moreStyles) => {
-      const normalisedStyles = moreStyles |> map(when(isShades).then(getShadesStyles));
+      const normalisedStyles = moreStyles |> map(when(isShades).then(getStyles));
 
       return extendableStyleFactory(name, extendableThing)(
         normalisedStyles |> reduce(mergeDeepRight, styleRules)
