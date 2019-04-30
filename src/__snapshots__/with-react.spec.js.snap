@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Shades DOM Renders without incident 1`] = `
-<Shades.Provider
+<withContext(Shades.Provider)
   prefixer={true}
   to={
     <span>
@@ -11,7 +11,7 @@ exports[`Shades DOM Renders without incident 1`] = `
     </span>
   }
 >
-  <Component
+  <Shades.Provider
     prefixer={true}
     to={
       <span>
@@ -30,8 +30,8 @@ exports[`Shades DOM Renders without incident 1`] = `
         Hello
       </h1>
     </shades.h1>
-  </Component>
-</Shades.Provider>
+  </Shades.Provider>
+</withContext(Shades.Provider)>
 `;
 
 exports[`Shades DOM allows extending multiple generic components 1`] = `
@@ -75,7 +75,7 @@ exports[`Shades DOM properly merges extended style rules 1`] = `
 `;
 
 exports[`Shades DOM renders a block matcher without incident 1`] = `
-<Shades.Provider
+<withContext(Shades.Provider)
   prefixer={true}
   to={
     <span>
@@ -85,7 +85,7 @@ exports[`Shades DOM renders a block matcher without incident 1`] = `
     </span>
   }
 >
-  <Component
+  <Shades.Provider
     prefixer={true}
     to={
       <span>
@@ -115,12 +115,12 @@ exports[`Shades DOM renders a block matcher without incident 1`] = `
         </a>
       </shades.a>
     </div>
-  </Component>
-</Shades.Provider>
+  </Shades.Provider>
+</withContext(Shades.Provider)>
 `;
 
 exports[`Shades DOM renders a block matcher without incident 2`] = `
-<Shades.Provider
+<withContext(Shades.Provider)
   prefixer={true}
   to={
     <span>
@@ -130,7 +130,7 @@ exports[`Shades DOM renders a block matcher without incident 2`] = `
     </span>
   }
 >
-  <Component
+  <Shades.Provider
     prefixer={true}
     to={
       <span>
@@ -149,12 +149,12 @@ exports[`Shades DOM renders a block matcher without incident 2`] = `
         Hello
       </a>
     </shades.a>
-  </Component>
-</Shades.Provider>
+  </Shades.Provider>
+</withContext(Shades.Provider)>
 `;
 
 exports[`Shades DOM renders a block matcher without incident 3`] = `
-<Shades.Provider
+<withContext(Shades.Provider)
   prefixer={true}
   to={
     <span>
@@ -164,7 +164,7 @@ exports[`Shades DOM renders a block matcher without incident 3`] = `
     </span>
   }
 >
-  <Component
+  <Shades.Provider
     prefixer={true}
     to={
       <span>
@@ -181,12 +181,12 @@ exports[`Shades DOM renders a block matcher without incident 3`] = `
         No Props!
       </a>
     </shades.a>
-  </Component>
-</Shades.Provider>
+  </Shades.Provider>
+</withContext(Shades.Provider)>
 `;
 
 exports[`Shades DOM should allow styles to apply to custom components 1`] = `
-<Shades.Provider
+<withContext(Shades.Provider)
   prefixer={true}
   to={
     <span>
@@ -196,7 +196,7 @@ exports[`Shades DOM should allow styles to apply to custom components 1`] = `
     </span>
   }
 >
-  <Component
+  <Shades.Provider
     prefixer={true}
     to={
       <span>
@@ -217,6 +217,6 @@ exports[`Shades DOM should allow styles to apply to custom components 1`] = `
         </div>
       </Component>
     </shades.generic>
-  </Component>
-</Shades.Provider>
+  </Shades.Provider>
+</withContext(Shades.Provider)>
 `;

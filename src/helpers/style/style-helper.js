@@ -9,12 +9,12 @@ import {
   pipe,
   equals,
   mapObjIndexed,
-  has
+  has,
+  both
 } from 'ramda';
 
 import selectorRegistry, {
   asPropertySelector,
-  asDescriptorIdentifier,
   isDescriptorSelector,
   isDescriptorObject,
   createDescriptor
@@ -28,7 +28,7 @@ import {
   isArray,
   isDefined,
   when,
-  dotPath,
+  getPath,
   includes,
   proxyCatchAll,
   anyOf,
@@ -56,14 +56,14 @@ const asPseudoFunction = curry((name, value) => (
 
 const descriptorObjectToString = when(isDescriptorObject).then(prop('key'));
 
-const anythingToString = when(isString).then(
-  when(isDescriptorSelector).then(
+const anythingToString = (
+  when(both(isSymbol, selectorRegistry.hasDescriptor)).then(
     selectorRegistry.getDescriptor,
     prop('key')
+  ).otherwise(
+    descriptorObjectToString.otherwise(toString)
   )
-).otherwise(
-  descriptorObjectToString.otherwise(toString)
-);
+)
 
 const createAndStoreDescriptor = (kind, itemKey) => compose(
   selectorRegistry.addDescriptor,
@@ -83,16 +83,29 @@ const createCombinator = (kind) => (...data) => {
   );
 }
 
+const joinSelectorsWith = (separator) => (data) => (
+  data |> map(anythingToString) |> join(` ${separator} `)
+);
+
+const joiners = {
+  all: joinSelectorsWith(COMBINATOR_INSERTS[COMBINATORS.COMBINATOR_AND]),
+  any: joinSelectorsWith(COMBINATOR_INSERTS[COMBINATORS.COMBINATOR_OR])
+}
+
 const pseudoCombinators = {
-  and: createCombinator(
-    COMBINATORS.COMBINATOR_AND
+  and: (...data) => (
+    selectorRegistry.helpers.selectors.all(
+      data,
+      joiners.all(data)
+    )
   ),
-  or: createCombinator(
-    COMBINATORS.COMBINATOR_OR
+  or: (...data) => (
+    selectorRegistry.helpers.selectors.any(
+      data,
+      joiners.any(data)
+    )
   )
 };
-
-// NEW STUFF
 
 const asAttributeSelector = (original) => {
   const givenName = original |> dasherize;
@@ -110,8 +123,8 @@ const asAttributeSelector = (original) => {
   const plainValue = `[${givenName}]`;
 
   const outerMethods = {
-    anyOf:         anyCombinator(attrWithValue),
     equals:        attrWithValue,
+    anyOf:         anyCombinator(attrWithValue),
     contains:      attrContains,
     containsAny:   anyCombinator(attrContains),
     startsWith:    attrStartsWith,
@@ -136,8 +149,8 @@ const createPropsWith = (valueCreator) => (keyList) => (
   }), {})
 );
 
-const allPseudoElements = PSEUDO_SELECTORS.ELEMENTS |> createPropsWith(asPseudoElement);
 const allPseudoClasses = PSEUDO_SELECTORS.CLASSES |> createPropsWith(asPseudoClass)
+const allPseudoElements = PSEUDO_SELECTORS.ELEMENTS |> createPropsWith(asPseudoElement);
 const allPseudoFunctions = PSEUDO_SELECTORS.FUNCTIONS |> createPropsWith(asPseudoFunction);
 
 export const createStyleHelpers = ({ useProxyFeatures = false } = {}) => {
@@ -159,6 +172,8 @@ export const createStyleHelpers = ({ useProxyFeatures = false } = {}) => {
     attr: asAttributeSelector |> withPropCatcher,
     data: asDataAttributeSelector |> withPropCatcher,
     prop: asPropertySelector |> withPropCatcher,
+
+    selector: (value) => selectorRegistry.helpers.selectors.arbitrary(value),
 
     props: {
       any: createCombinator(COMBINATORS.PROPERTY_OR),

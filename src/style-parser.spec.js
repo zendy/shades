@@ -99,6 +99,40 @@ describe('parseRules', () => {
     );
   })
 
+  it('allows an arbitrary selector escape hatch', () => {
+    const arbitrarySelector = 'div span > a[href] + label'
+
+    const expectedSelector = `${topSelector} ${arbitrarySelector}`;
+    const expectedSelectorHover = `${topSelector} ${arbitrarySelector}:hover`;
+
+    const result = parseRulesNoDebug(topSelector, {}, {
+      color: 'blue',
+      fontSize: '10px',
+      [style.selector(arbitrarySelector)]: {
+        color: 'purple',
+        fontWeight: 'bold',
+        [style.hover]: {
+          color: 'green'
+        }
+      }
+    });
+
+    expect(result).toMatchObject({
+      [topSelector]: {
+        'color': 'blue',
+        'font-size': '10px'
+      },
+      [expectedSelector]: {
+        'color': 'purple',
+        'font-weight': 'bold'
+      },
+      [expectedSelectorHover]: {
+        'color': 'green'
+      }
+    });
+  });
+
+
   // TODO: stop using this as my "test-everything-ever" bucket
   it('should shift at-rules up to the top level', () => {
     const topSelectorHover = `${topSelector}:hover`;
@@ -376,7 +410,6 @@ describe('parseRules', () => {
 
     it('supports pseudo-functions from the style helper', () => {
       const topSelectorNotHover = `${topSelector}:not(:hover)`;
-      const topSelectorHref = `[href^="http"]`;
 
       const result = parseRulesNoDebug(
         topSelector,
@@ -403,6 +436,10 @@ describe('parseRules', () => {
       const expectedOutput = {
         [topSelector]: {
           'color': 'blue'
+        },
+        [topSelectorNotHover]: {
+          'font-weight': 'bold',
+          'color': 'purple'
         },
         [`${topSelector}[href^="http"]:nth-of-type(even),${topSelector}[href^="https"]:nth-of-type(even)`]: {
           'color': 'red'

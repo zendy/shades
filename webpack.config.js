@@ -17,26 +17,28 @@ const isTest = nodeEnv === 'test';
 const isProduction = nodeEnv === 'production';
 const isDevelopment = !isProduction && !isTest;
 
-const developmentConfig = isDevelopment && {
+const developmentConfig = {
   mode: 'development',
   devtool: 'source-map'
 }
 
-const environmentConfig = developmentConfig || {
+const productionConfig = {
   mode: 'production',
   devtool: false,
   optimization: {
     minimize: true,
     minimizer: [
       new TerserPlugin({
-        parallel: true
+        parallel: true,
+        cache: true
       })
     ]
   }
 };
 
 module.exports = {
-  ...environmentConfig,
+  ...isDevelopment && developmentConfig,
+  ...isProduction && productionConfig,
   entry: {
     lib: './src/shades.js',
     react: './src/with-react.js',

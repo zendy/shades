@@ -82,6 +82,12 @@ style.pseudo('custom-pseudo-function', 'hello') // :custom-pseudo-function(hello
 style.element('wow-amazing') // ::wow-amazing
 ```
 
+There is also now an escape hatch for adding completely arbitrary selectors - which are tacked on to the end of the shades element's class selector, like all the others - and should only be used **SPARINGLY AND DELIBERATELY**, for times when there are no other suitable solutions.  In the future, this will be replaced by a special Shades DSL for selecting things.  If in doubt, don't use this!
+
+```js
+style.selector('div span > a[href] + label');
+```
+
 ### Supported Pseudo-Selectors:
 
 I opted to include all pseudo selectors that I could.  A few were left out deliberately, such as `host` and `host-context`, but please raise an issue if you need them or if we're missing any others.

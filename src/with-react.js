@@ -44,11 +44,11 @@ import {
   isString,
   not,
   firstItem,
-  dotPath
+  getPath
 } from './utilities';
 
 const isShades     = prop('isShadesElement');
-const getStyles    = dotPath('meta.styles');
+const getStyles    = getPath('meta.styles');
 const badConfigMsg = 'Looks like either the Shades context provider is missing, or is incorrectly configured.';
 const htmlPrefix   = 'html-';
 
@@ -83,14 +83,15 @@ const processAndForwardDomAttributes = (elementName) => (
  *   <shades.h1>Hello</shades.h1>
  * </Shades>
  */
-export const Shades = compose(
-  setDisplayName('Shades.Provider'),
-  setPropTypes({
+export const Shades = (
+  (props => props.children)
+  |> setDisplayName('Shades.Provider')
+  |> setPropTypes({
     to: PropTypes.object.isRequired,
     showDebug: PropTypes.bool,
     prefixer: PropTypes.oneOfType([PropTypes.bool, PropTypes.object])
-  }),
-  withContext(
+  })
+  |> withContext(
     {
       targetDom: PropTypes.object,
       showDebug: PropTypes.bool,
@@ -98,7 +99,7 @@ export const Shades = compose(
     },
     ({ to, showDebug, prefixer }) => ({ targetDom: to, showDebug, prefixer })
   )
-)(props => props.children);
+)
 
 const applyShadesContext = setStatic('contextTypes', {
   targetDom: PropTypes.object,

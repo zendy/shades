@@ -1,6 +1,6 @@
-import 'core-js/es6/math';
 // We import this polyfill explicitly because it is used in autoprefixer
-// and IE11 doesnt have a native implementation.
+// and IE11 doesnt have a native implementation of `Math.sign`. Thanks MS.
+import 'core-js/es6/math';
 import hasher from 'hash-it';
 
 import {
@@ -15,14 +15,12 @@ import {
   valueAsFunction,
   isObjectLiteral,
   isArray,
-  isNotArray,
+  appendAll,
   isString,
   isFunction,
   isDefined,
   isNumber,
   isSymbol,
-  isNotFalse,
-  joinString,
   isUndefinedOrFalse,
   shadesLog,
   startsWithAny,
@@ -59,14 +57,11 @@ import {
   keys,
   has,
   merge,
-  mergeWith,
   equals,
-  last,
-  forEach,
   all,
   type,
-  always,
-  prop
+  prop,
+  trim
 } from 'ramda';
 
 import autoprefixer from 'autoprefixer';
@@ -79,7 +74,8 @@ import {
 import selectorRegistry, {
   isDescriptorSelector,
   isPropertySelector,
-  removePropertySelectorPrefix
+  removePropertySelectorPrefix,
+  SPECIAL_TYPES
 } from './registries/selectors';
 import { COMBINATORS } from './helpers/selector-types';
 
@@ -266,7 +262,7 @@ const parseStyleMetaData = (ruleResponder) => {
         asNewParser
       });
 
-      const isSpecialSelector     = isDescriptorSelector(key);
+      const isSpecialSelector     = isSymbol(key);
       const isFunctionRule        = isFunction(value);
       const hasObjectLiteral      = isObjectLiteral(value);
       const hasNestedRules        = hasObjectLiteral || isFunctionRule;
@@ -313,7 +309,7 @@ const parseStyleMetaData = (ruleResponder) => {
     return (
       rules
       |> toPairs
-      |> concat(symbolRules)
+      |> appendAll(symbolRules)
       |> reduce(
         (result, [key, value]) => evaluateRule(result)(key, value),
         initialResult // OrderedMap from the default above
@@ -383,12 +379,7 @@ export const parseAllStyles = parseStyleMetaData({
   },
   specialSelector: ({ extendSelector, props, parseNested, parentSelector, propExists }) => (
     (specialKey, styleBlock) => {
-      const parseStyleBlockWith = (selector) => (
-        styleBlock
-        |> parseNested(selector)
-      );
-
-      const handlers = {
+      const transformers = {
         [COMBINATORS.PROPERTY_OR]: (targetProps) => {
           if (targetProps |> find(propExists)) return (
             styleBlock |> parseNested(parentSelector)
@@ -404,15 +395,22 @@ export const parseAllStyles = parseStyleMetaData({
         ),
         [COMBINATORS.COMBINATOR_AND]: (targetSelectors) => (
           styleBlock |> parseNested(targetSelectors |> join('') |> extendSelector)
+        ),
+        [SPECIAL_TYPES.ARBITRARY_SELECTOR]: (addedSelector) => (
+          styleBlock |> parseNested(
+            addedSelector
+            |> trim
+            |> concat(' ')
+            |> extendSelector
+          )
         )
       }
 
       const { kind, value } = selectorRegistry.getDescriptor(specialKey);
 
-      return handlers?.[kind]?.(value);
+      return transformers?.[kind]?.(value);
     }
   ),
-  // fontFace: () => (ruleName, value) =>
   style: ({ addStyle, props, reevaluate }) => functionRulesCallWith(props)(
     (ruleName, value) => (
       value

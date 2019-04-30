@@ -134,12 +134,13 @@ export const isNotObjectLiteral = complement(isObjectLiteral);
 export const sliceFromFirstChar = splitAt(1);
 export const reduceToString     = curry((reduceFn, list) => reduce(reduceFn, '', list));
 export const returnAsIs         = (value)      => value;
-export const joinWith           = (...values)  => (separator)  => values.join(separator);
+export const joinWith           = (separator) => (...values)  => values.join(separator);
 export const getSubstring       = (start, end) => (original)   => original.substring(start, end);
 export const getSubstringUntil  = (end)        => getSubstring(0, end);
 export const getSubstringAfter  = (start)      => getSubstring(start);
 export const startsWithAny      = (...searchStrs) => searchStrs >> map(startsWith) >> anyPass
 export const combineStrings     = (...inputs) => inputs.filter(Boolean).join('');
+export const appendAll = (items) => (original) => concat(original, items);
 
 export const safeJoinWith = (separator) => (...args) => (
   args |> when(firstItem, isArray).then(firstItem) |> filter(Boolean) |> join(separator)
@@ -269,8 +270,8 @@ export const when = (...predicates) => {
 
 export const not = when(isFunction).then(complement).otherwise(negate);
 
-export const dotPath = curry(
-  (pathStr, target) => target >> path(pathStr >> split('.'))
+export const getPath = curry(
+  (pathStr, target) => target |> path(pathStr |> split('.'))
 );
 
 export const betterSet = (initialData = []) => {

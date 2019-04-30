@@ -8,6 +8,10 @@ const expectString = (original) => expect(
   original.toString().replace(SPECIAL_TYPES.DESCRIPTOR.PREFIX, '')
 );
 
+const expectDescriptor = (original) => expect(
+  Symbol.keyFor(original)
+)
+
 describe('style (compatibility version, not using proxies)', () => {
   const RealProxy = Proxy;
   beforeAll(() => {
@@ -80,28 +84,22 @@ describe('style (compatibility version, not using proxies)', () => {
     ).toEqual(':not(:hover)');
   });
   it('supports the and operator as a method', () => {
-    expectString(
+    expectDescriptor(
       style.and(style.hover, style.focus)
-    ).toEqual(':hover && :focus');
+    ).toEqual('combinator.and § :hover && :focus');
   });
-  it('stores the descriptor that can be retrieved later', () => {
-    const first = selectorRegistry.getDescriptor(style.and(style.hover, style.focus));
-    const last = selectorRegistry.getDescriptor(style.and(style.hover, style.focus));
-
-    expect(last).toBe(first);
-  })
   it('supports the or operator as a method', () => {
-    expectString(
+    expectDescriptor(
       style.or(style.hover, style.visited)
-    ).toEqual(':hover || :visited')
+    ).toEqual('combinator.or § :hover || :visited')
   });
   it('supports different combinations of and + or combinators', () => {
-    expectString(
+    expectDescriptor(
       style.or(style.and(style.hover, style.focus), style.visited, style.active)
-    ).toEqual(':hover && :focus || :visited || :active')
-    expectString(
+    ).toEqual('combinator.or § :hover && :focus || :visited || :active')
+    expectDescriptor(
       style.and(style.or(style.hover, style.focus), style.visited, style.active)
-    ).toEqual(':hover || :focus && :visited && :active')
+    ).toEqual('combinator.and § :hover || :focus && :visited && :active')
   });
 
   describe('Attributes and props', () => {
@@ -131,17 +129,17 @@ describe('style (compatibility version, not using proxies)', () => {
           style.attr('href').endsWith('.org')
         ).toEqual('[href$=".org"]');
 
-        expectString(
+        expectDescriptor(
           style.attr('href').endsWithAny('.com', '.net', '.org')
-        ).toEqual('[href$=".com"] || [href$=".net"] || [href$=".org"]');
+        ).toEqual('combinator.or § [href$=".com"] || [href$=".net"] || [href$=".org"]');
 
-        expectString(
+        expectDescriptor(
           style.attr('type').anyOf('button', 'text', 'date', 'email')
-        ).toEqual('[type="button"] || [type="text"] || [type="date"] || [type="email"]');
+        ).toEqual('combinator.or § [type="button"] || [type="text"] || [type="date"] || [type="email"]');
 
-        expectString(
+        expectDescriptor(
           style.attr('href').startsWithAny('http', 'https', 'ftp')
-        ).toEqual('[href^="http"] || [href^="https"] || [href^="ftp"]');
+        ).toEqual('combinator.or § [href^="http"] || [href^="https"] || [href^="ftp"]');
       });
 
       it('supports data attribute selectors with the .data method', () => {
@@ -151,25 +149,25 @@ describe('style (compatibility version, not using proxies)', () => {
       });
 
       it('supports partial value matching on data attributes', () => {
-        expectString(
+        expectDescriptor(
           style.data('url').endsWithAny('.com', '.net', '.org')
-        ).toEqual('[data-url$=".com"] || [data-url$=".net"] || [data-url$=".org"]');
+        ).toEqual('combinator.or § [data-url$=".com"] || [data-url$=".net"] || [data-url$=".org"]');
 
-        expectString(
+        expectDescriptor(
           style.data('validation').anyOf('date', 'email', 'phone')
-        ).toEqual('[data-validation="date"] || [data-validation="email"] || [data-validation="phone"]');
+        ).toEqual('combinator.or § [data-validation="date"] || [data-validation="email"] || [data-validation="phone"]');
       });
 
       it('supports combinators on attribute selectors', () => {
-        expectString(
+        expectDescriptor(
           style.and(style.attr('src'), style.attr('href').startsWith('https'))
-        ).toEqual('[src] && [href^="https"]')
-        expectString(
+        ).toEqual('combinator.and § [src] && [href^="https"]')
+        expectDescriptor(
           style.or(style.attr('src'), style.attr('href').startsWith('https'))
-        ).toEqual('[src] || [href^="https"]')
-        expectString(
+        ).toEqual('combinator.or § [src] || [href^="https"]')
+        expectDescriptor(
           style.or(style.attr('src'), style.attr('href').startsWithAny('http', 'https'))
-        ).toEqual('[src] || [href^="http"] || [href^="https"]')
+        ).toEqual('combinator.or § [src] || [href^="http"] || [href^="https"]')
       });
     });
 
@@ -180,14 +178,14 @@ describe('style (compatibility version, not using proxies)', () => {
         ).toEqual('!!specialItem');
       });
       it('supports matching for multiple props at once', () => {
-        expectString(
+        expectDescriptor(
           style.props.all(style.prop('specialItem'), style.prop('thingamabob'))
-        ).toEqual('!!specialItem && !!thingamabob')
+        ).toEqual('property.and § !!specialItem && !!thingamabob')
       });
       it('supports matching against a subset of possible props', () => {
-        expectString(
+        expectDescriptor(
           style.props.any(style.prop('specialItem'), style.prop('thingamabob'))
-        ).toEqual('!!specialItem || !!thingamabob')
+        ).toEqual('property.or § !!specialItem || !!thingamabob')
       });
     });
   });
